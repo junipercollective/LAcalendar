@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LA Social Impact Events — Juniper Collective</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600&family=Oranienbaum&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-dark:  #30523a;
+    --green-sage:  #72997d;
+    --gold:        #c1a55f;
+    --cream:       #f2ede4;
+    --cream-dark:  #e8e1d5;
+    --text-dark:   #1e2e23;
+    --text-mid:    #4a5e50;
+    --text-light:  #7a8f80;
+    --white:       #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--cream); color: var(--text-dark); font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.6; }
+
+  .header { background: var(--green-dark); padding: 48px 40px 36px; }
+  .header-label { font-size: 10px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  .header h1 { font-family: 'Oranienbaum', serif; font-size: clamp(32px, 5vw, 52px); font-weight: 400; color: var(--cream); line-height: 1.1; max-width: 600px; }
+  .header-sub { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic; font-weight: 300; color: var(--green-sage); margin-top: 12px; }
+
+  .controls { background: var(--white); border-bottom: 1px solid var(--cream-dark); padding: 20px 40px; position: sticky; top: 0; z-index: 100; }
+
+  .search-wrap { position: relative; max-width: 320px; margin-bottom: 16px; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
+  .search-input { width: 100%; padding: 9px 12px 9px 36px; border: 1px solid var(--cream-dark); border-radius: 4px; font-family: 'Montserrat', sans-serif; font-size: 12px; background: var(--cream); color: var(--text-dark); outline: none; transition: border-color 0.2s; }
+  .search-input:focus { border-color: var(--green-sage); }
+  .search-input::placeholder { color: var(--text-light); }
+
+  .filter-section { margin-bottom: 10px; }
+  .filter-section:last-child { margin-bottom: 0; }
+  .filter-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .filter-label { font-size: 9px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-light); margin-right: 4px; min-width: 52px; }
+
+  /* Chip + tooltip */
+  .chip-wrap { position: relative; display: inline-block; }
+  .chip {
+    padding: 5px 12px; border-radius: 20px; border: 1px solid var(--cream-dark);
+    background: transparent; font-family: 'Montserrat', sans-serif; font-size: 11px;
+    font-weight: 500; color: var(--text-mid); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--green-sage); color: var(--green-dark); }
+  .chip.active { background: var(--green-dark); border-color: var(--green-dark); color: var(--cream); }
+  .chip.cost.active  { background: var(--gold); border-color: var(--gold); color: var(--white); }
+  .chip.format.active { background: var(--green-sage); border-color: var(--green-sage); color: var(--white); }
+
+  .tooltip {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--green-dark); color: var(--cream); font-family: 'Montserrat', sans-serif;
+    font-size: 10px; font-weight: 400; line-height: 1.5; padding: 8px 12px; border-radius: 4px;
+    white-space: normal; width: 200px; text-align: center; z-index: 200;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); pointer-events: none;
+  }
+  .tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--green-dark); }
+  .chip-wrap:hover .tooltip { display: block; }
+
+  .main { padding: 36px 40px 60px; max-width: 1200px; }
+
+  .state-msg { text-align: center; padding: 80px 40px; }
+  .state-msg .spinner { width: 32px; height: 32px; border: 3px solid var(--cream-dark); border-top-color: var(--green-sage); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .state-msg p { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: var(--text-light); }
+
+  .results-bar { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--cream-dark); }
+  .results-count { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-style: italic; color: var(--text-mid); }
+  .results-count strong { color: var(--green-dark); font-style: normal; font-weight: 400; }
+
+  .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+
+  .card { background: var(--white); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s, box-shadow 0.15s; border: 1px solid transparent; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(48,82,58,0.1); border-color: var(--cream-dark); }
+  .card-bar { height: 4px; flex-shrink: 0; }
+  .card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+
+  .card-meta-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px; }
+  .card-category { font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-light); }
+  .card-badges { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .badge { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; }
+  .badge-free     { background: rgba(193,165,95,0.15); color: var(--gold); }
+  .badge-ticketed { background: rgba(114,153,125,0.12); color: var(--green-sage); }
+  .badge-virtual  { background: rgba(48,82,58,0.08); color: var(--green-dark); }
+  .badge-hybrid   { background: rgba(193,165,95,0.1); color: var(--text-mid); }
+  .badge-ongoing  { background: rgba(114,153,125,0.12); color: var(--green-sage); }
+
+  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 400; line-height: 1.25; color: var(--green-dark); margin-bottom: 6px; }
+  .card-org { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--text-light); margin-bottom: 10px; }
+  .card-datetime { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 12px; }
+  .card-datetime span { font-size: 12px; color: var(--text-mid); display: flex; align-items: center; gap: 4px; }
+  .card-datetime svg { color: var(--green-sage); flex-shrink: 0; }
+  .card-desc { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 300; line-height: 1.55; color: var(--text-mid); flex: 1; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-link { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-dark); text-decoration: none; border-bottom: 1px solid var(--gold); padding-bottom: 1px; transition: color 0.15s; align-self: flex-start; }
+  .card-link:hover { color: var(--gold); }
+
+  /* Category bar colors */
+  .cat-climate      { background: #30523a; }
+  .cat-nature       { background: #72997d; }
+  .cat-ocean        { background: #4a7a9b; }
+  .cat-community    { background: #7a6a9b; }
+  .cat-women        { background: #9b7080; }
+  .cat-energy       { background: #4a6b7a; }
+  .cat-csrbusiness  { background: #c1a55f; }
+  .cat-socialimpact { background: #5c7a6a; }
+  .cat-finance      { background: #8a7055; }
+  .cat-default      { background: var(--green-sage); }
+
+  @media (max-width: 600px) {
+    .header { padding: 32px 20px 24px; }
+    .controls { padding: 16px 20px; }
+    .main { padding: 24px 20px 48px; }
+    .events-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Juniper Collective</div>
+  <h1>LA Social Impact Events</h1>
+  <p class="header-sub">Climate, community, nature, and more — updated automatically</p>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="search-input" type="text" id="search" placeholder="Search events, orgs, topics...">
+  </div>
+
+  <div class="filter-section">
+    <div class="filter-row" id="cat-filters">
+      <span class="filter-label">Topic</span>
+      <div class="chip-wrap"><button class="chip active" data-cat="all">All</button></div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="Women">Women</button>
+        <div class="tooltip">Women building community and related events</div>
+      </div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="Climate">Climate</button>
+        <div class="tooltip">Climate action, sustainability, climate policy, climate design, green living</div>
+      </div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="Energy &amp; Tech">Energy &amp; Tech</button>
+        <div class="tooltip">Cleantech, energy, climate tech, innovation, startups</div>
+      </div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="Nature">Nature</button>
+        <div class="tooltip">Parks, wildlife, native plants, restoration, biodiversity, hiking with conservation focus</div>
+      </div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="Ocean">Ocean</button>
+        <div class="tooltip">Beach cleanups, coastal advocacy, marine education, Heal the Bay, Surfrider</div>
+      </div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="CSR &amp; Business">CSR &amp; Business</button>
+        <div class="tooltip">CSR, B Corps, corporate impact, purpose-driven business</div>
+      </div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="Social Impact">Social Impact</button>
+        <div class="tooltip">General social impact, social enterprise, nonprofit, philanthropy, changemaker events</div>
+      </div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="Finance">Finance</button>
+        <div class="tooltip">Impact investing, sustainable finance, women investing, funder-related events</div>
+      </div>
+      <div class="chip-wrap">
+        <button class="chip" data-cat="Community">Community</button>
+        <div class="tooltip">Inclusive hikes, wellness, relationship-building, broad purpose-driven gatherings</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-section">
+    <div class="filter-row" id="cost-filters">
+      <span class="filter-label">Cost</span>
+      <div class="chip-wrap"><button class="chip cost active" data-cost="all">All</button></div>
+      <div class="chip-wrap"><button class="chip cost" data-cost="Free">Free</button></div>
+      <div class="chip-wrap"><button class="chip cost" data-cost="Ticketed">Ticketed</button></div>
+    </div>
+  </div>
+
+  <div class="filter-section">
+    <div class="filter-row" id="format-filters">
+      <span class="filter-label">Format</span>
+      <div class="chip-wrap"><button class="chip format active" data-format="all">All</button></div>
+      <div class="chip-wrap"><button class="chip format" data-format="In-Person">In-Person</button></div>
+      <div class="chip-wrap"><button class="chip format" data-format="Virtual">Virtual</button></div>
+      <div class="chip-wrap"><button class="chip format" data-format="Hybrid">Hybrid</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="state" class="state-msg">
+    <div class="spinner"></div>
+    <p>Loading events...</p>
+  </div>
+  <div id="results-bar" class="results-bar" style="display:none;">
+    <span class="results-count" id="count-label"></span>
+  </div>
+  <div class="events-grid" id="grid"></div>
+</div>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDPUhIDqWXkMLZ7LWTBRIlkOpNiZaDGVIDq5IFsn2h4oqrHoTq-hhht2j_mG2nxyI_K2nG0K1IvDYU/pub?gid=1791053541&single=true&output=csv";
+
+let allEvents = [];
+let activeCategories = new Set(); // empty = All
+let activeCost   = "all";
+let activeFormat = "all";
+let searchQuery  = "";
+
+// ── CSV parser ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = splitLine(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = splitLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h.trim()] = (vals[i] || "").trim(); });
+    return obj;
+  });
+}
+function splitLine(line) {
+  const out = []; let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else { inQ = !inQ; } }
+    else if (c === ',' && !inQ) { out.push(cur); cur = ""; }
+    else { cur += c; }
+  }
+  out.push(cur);
+  return out;
+}
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+const ONGOING_LABELS = ["ongoing","recurring","spring","summer","fall","winter","tbd","varies","monthly","weekly","daily","year-round"];
+
+function isOngoing(str) {
+  if (!str) return true;
+  const s = str.toLowerCase();
+  return ONGOING_LABELS.some(l => s.includes(l));
+}
+
+function parseDate(str) {
+  if (!str || isOngoing(str)) return null;
+  str = str.trim();
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y,m,d] = str.split("-").map(Number);
+    return new Date(y, m-1, d);
+  }
+  // "Fri Apr 24" or "Apr 24" or "April 24"
+  const m1 = str.match(/([a-zA-Z]+)\s+(\d{1,2})(?:,?\s*(\d{4}))?/);
+  if (m1) {
+    const mon = MONTHS[m1[1].slice(0,3).toLowerCase()];
+    if (mon !== undefined) {
+      const day  = parseInt(m1[2]);
+      const now  = new Date();
+      let year   = m1[3] ? parseInt(m1[3]) : now.getFullYear();
+      const d    = new Date(year, mon, day);
+      // if date already passed this year and no explicit year, try next year
+      if (!m1[3] && d < now) { return new Date(year + 1, mon, day); }
+      return d;
+    }
+  }
+  // M/D/YYYY or M/D/YY
+  const m2 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m2) {
+    let y = parseInt(m2[3]);
+    if (y < 100) y += 2000;
+    return new Date(y, parseInt(m2[1])-1, parseInt(m2[2]));
+  }
+  return null;
+}
+
+function isUpcoming(str) {
+  if (isOngoing(str)) return true; // always show ongoing
+  const d = parseDate(str);
+  if (!d) return true; // unparseable — show it
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d >= today;
+}
+
+function displayDate(str) {
+  if (!str) return "";
+  if (isOngoing(str)) return str; // show as-is: "Ongoing", "Recurring", etc.
+  const d = parseDate(str);
+  if (!d) return str;
+  return d.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
+}
+
+function displayTime(str) {
+  if (!str) return "";
+  const m = str.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return str;
+  const h = parseInt(m[1]), min = m[2];
+  return `${h % 12 || 12}:${min} ${h >= 12 ? "PM" : "AM"}`;
+}
+
+// ── Category bar color ───────────────────────────────────────────────────────
+function catClass(cat) {
+  const map = {
+    "Climate":"cat-climate","Nature":"cat-nature","Ocean":"cat-ocean",
+    "Community":"cat-community","Women":"cat-women","Energy & Tech":"cat-energy",
+    "CSR & Business":"cat-csrbusiness","Social Impact":"cat-socialimpact","Finance":"cat-finance"
+  };
+  return map[cat] || "cat-default";
+}
+
+// ── Sort key ─────────────────────────────────────────────────────────────────
+function sortKey(ev) {
+  if (isOngoing(ev.Date)) return new Date(9999,0,1); // ongoing events at end
+  const d = parseDate(ev.Date);
+  return d || new Date(9999,0,1);
+}
+
+// ── Render card ──────────────────────────────────────────────────────────────
+function renderCard(ev) {
+  const cost   = (ev.Cost   || "").trim();
+  const fmt    = (ev.Format || "").trim();
+  const link   = (ev.Link   || "").trim();
+  const dateRaw = (ev.Date  || "").trim();
+
+  const costBadge   = cost ? `<span class="badge badge-${cost.toLowerCase()}">${cost}</span>` : "";
+  const ongoingBadge = isOngoing(dateRaw) ? `<span class="badge badge-ongoing">${dateRaw || "Ongoing"}</span>` : "";
+  const fmtBadge    = (fmt && fmt !== "In-Person")
+    ? `<span class="badge badge-${fmt.toLowerCase().replace(/[^a-z]/g,"")}"> ${fmt}</span>` : "";
+
+  const dateStr = displayDate(dateRaw);
+  const timeStr = displayTime(ev.Time || "");
+  const area    = (ev.Area || "").trim();
+
+  const calIcon  = `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+  const clockIcon= `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
+  const pinIcon  = `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+
+  const desc   = (ev.Description || "").trim();
+  const linkEl = link ? `<a class="card-link" href="${link}" target="_blank" rel="noopener">Register &rarr;</a>` : "";
+
+  return `
+<div class="card">
+  <div class="card-bar ${catClass(ev.Category)}"></div>
+  <div class="card-body">
+    <div class="card-meta-top">
+      <span class="card-category">${ev.Category || ""}</span>
+      <div class="card-badges">${ongoingBadge}${costBadge}${fmtBadge}</div>
+    </div>
+    <div class="card-title">${ev.Title || "Untitled"}</div>
+    <div class="card-org">${ev.Organization || ""}</div>
+    <div class="card-datetime">
+      ${!isOngoing(dateRaw) && dateStr ? `<span>${calIcon}${dateStr}</span>` : ""}
+      ${timeStr ? `<span>${clockIcon}${timeStr}</span>` : ""}
+      ${area    ? `<span>${pinIcon}${area}</span>` : ""}
+    </div>
+    ${desc   ? `<div class="card-desc">${desc}</div>` : ""}
+    ${linkEl}
+  </div>
+</div>`;
+}
+
+// ── Filter + render ──────────────────────────────────────────────────────────
+function render() {
+  const q = searchQuery.toLowerCase();
+  const filtered = allEvents.filter(ev => {
+    if (activeCategories.size > 0 && !activeCategories.has(ev.Category)) return false;
+    if (activeCost   !== "all" && ev.Cost !== activeCost) return false;
+    if (activeFormat !== "all") {
+      const fmt = ev.Format || "In-Person";
+      if (fmt !== activeFormat) return false;
+    }
+    if (q) {
+      const hay = [ev.Title, ev.Organization, ev.Description, ev.Area, ev.Category].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const grid = document.getElementById("grid");
+  const bar  = document.getElementById("results-bar");
+  const lbl  = document.getElementById("count-label");
+  const state = document.getElementById("state");
+
+  if (filtered.length === 0) {
+    grid.innerHTML = "";
+    bar.style.display = "none";
+    state.style.display = "block";
+    state.innerHTML = `<p>No events match your current filters.</p>`;
+    return;
+  }
+  state.style.display = "none";
+  bar.style.display = "flex";
+  lbl.innerHTML = `<strong>${filtered.length}</strong> upcoming event${filtered.length !== 1 ? "s" : ""}`;
+  grid.innerHTML = filtered.map(renderCard).join("");
+}
+
+// ── Load CSV ─────────────────────────────────────────────────────────────────
+async function loadEvents() {
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    allEvents = rows
+      .filter(r => (r.Active || "").trim().toLowerCase() === "yes")
+      .filter(r => isUpcoming(r.Date))
+      .sort((a, b) => sortKey(a) - sortKey(b));
+    document.getElementById("state").style.display = "none";
+    render();
+  } catch (err) {
+    console.error(err);
+    document.getElementById("state").innerHTML =
+      `<p>Could not load events.</p><p style="font-size:11px;color:#c0392b;margin-top:8px;">${err.message}</p>`;
+  }
+}
+
+// ── Chip interactions ─────────────────────────────────────────────────────────
+document.getElementById("cat-filters").addEventListener("click", e => {
+  const btn = e.target.closest("[data-cat]");
+  if (!btn) return;
+  const cat = btn.dataset.cat;
+  if (cat === "all") {
+    activeCategories.clear();
+    document.querySelectorAll("[data-cat]").forEach(el => el.classList.remove("active"));
+    btn.classList.add("active");
+  } else {
+    // deselect "All"
+    document.querySelector("[data-cat='all']").classList.remove("active");
+    if (activeCategories.has(cat)) {
+      activeCategories.delete(cat);
+      btn.classList.remove("active");
+    } else {
+      activeCategories.add(cat);
+      btn.classList.add("active");
+    }
+    // if nothing selected, revert to All
+    if (activeCategories.size === 0) {
+      document.querySelector("[data-cat='all']").classList.add("active");
+    }
+  }
+  render();
+});
+
+document.getElementById("cost-filters").addEventListener("click", e => {
+  const btn = e.target.closest("[data-cost]");
+  if (!btn) return;
+  activeCost = btn.dataset.cost;
+  document.querySelectorAll("[data-cost]").forEach(el => el.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+});
+
+document.getElementById("format-filters").addEventListener("click", e => {
+  const btn = e.target.closest("[data-format]");
+  if (!btn) return;
+  activeFormat = btn.dataset.format;
+  document.querySelectorAll("[data-format]").forEach(el => el.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+});
+
+document.getElementById("search").addEventListener("input", e => {
+  searchQuery = e.target.value;
+  render();
+});
+
+loadEvents();
+</script>
+</body>
+</html>
