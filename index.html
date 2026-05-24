@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LA Social Impact Events — Juniper Collective</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600&family=Oranienbaum&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-dark:  #30523a;
+    --green-sage:  #72997d;
+    --gold:        #c1a55f;
+    --cream:       #f2ede4;
+    --cream-dark:  #e8e1d5;
+    --text-dark:   #1e2e23;
+    --text-mid:    #4a5e50;
+    --text-light:  #7a8f80;
+    --white:       #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--cream); color: var(--text-dark); font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.6; }
+
+  /* Header */
+  .header { background: var(--green-dark); padding: 48px 40px 36px; }
+  .header-label { font-size: 10px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  .header h1 { font-family: 'Oranienbaum', serif; font-size: clamp(30px, 5vw, 50px); font-weight: 400; color: var(--cream); line-height: 1.1; max-width: 600px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .header-sub { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic; font-weight: 300; color: var(--green-sage); margin-top: 12px; }
+
+  /* Controls */
+  .controls { background: var(--white); border-bottom: 1px solid var(--cream-dark); padding: 18px 40px; position: sticky; top: 0; z-index: 100; }
+  .controls-inner { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+
+  /* Search */
+  .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 300px; }
+  .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
+  .search-input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid var(--cream-dark); border-radius: 4px; font-family: 'Montserrat', sans-serif; font-size: 12px; background: var(--cream); color: var(--text-dark); outline: none; }
+  .search-input:focus { border-color: var(--green-sage); }
+  .search-input::placeholder { color: var(--text-light); }
+
+  /* Filter groups */
+  .filter-groups { display: flex; flex-wrap: wrap; gap: 12px; flex: 1; }
+  .filter-group { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .filter-label { font-size: 9px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-right: 2px; white-space: nowrap; }
+
+  /* Chips */
+  .chip {
+    padding: 5px 11px; border-radius: 20px; border: 1px solid var(--cream-dark);
+    background: transparent; font-family: 'Montserrat', sans-serif; font-size: 11px;
+    font-weight: 500; color: var(--text-mid); cursor: pointer; transition: all 0.15s;
+    white-space: nowrap; position: relative;
+  }
+  .chip:hover { border-color: var(--green-sage); color: var(--green-dark); }
+  .chip.active { background: var(--green-dark); border-color: var(--green-dark); color: var(--cream); }
+  .chip-cost.active  { background: var(--gold); border-color: var(--gold); color: var(--white); }
+  .chip-format.active { background: var(--green-sage); border-color: var(--green-sage); color: var(--white); }
+  .chip-location.active { background: var(--text-mid); border-color: var(--text-mid); color: var(--white); }
+
+  /* Tooltip */
+  .chip[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--green-dark); color: var(--cream); font-size: 10px; font-weight: 400;
+    line-height: 1.4; padding: 7px 10px; border-radius: 4px; white-space: normal;
+    width: 200px; text-align: left; z-index: 200; pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .chip[data-tooltip]:hover::before {
+    content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%;
+    transform: translateX(-50%); border: 5px solid transparent;
+    border-top-color: var(--green-dark); z-index: 200; pointer-events: none;
+  }
+
+  /* Clear filters */
+  .clear-btn { font-size: 10px; font-weight: 500; color: var(--text-light); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 4px 0; white-space: nowrap; }
+  .clear-btn:hover { color: var(--green-dark); }
+
+  /* Main */
+  .main { padding: 32px 40px 60px; max-width: 1200px; }
+
+  /* State */
+  .state-msg { text-align: center; padding: 80px 40px; }
+  .spinner { width: 30px; height: 30px; border: 3px solid var(--cream-dark); border-top-color: var(--green-sage); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .state-msg p { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: var(--text-light); }
+
+  /* Results bar */
+  .results-bar { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--cream-dark); }
+  .results-count { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: var(--text-mid); }
+  .results-count strong { color: var(--green-dark); font-style: normal; font-weight: 400; }
+
+  /* Grid */
+  .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+
+  /* Card */
+  .card { background: var(--white); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s, box-shadow 0.15s; border: 1px solid transparent; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(48,82,58,0.1); border-color: var(--cream-dark); }
+  .card-bar { height: 4px; flex-shrink: 0; }
+  .card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
+  .card-meta-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; gap: 8px; }
+  .card-category { font-size: 9px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-light); }
+  .card-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .badge { font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; }
+  .badge-free     { background: rgba(193,165,95,0.15); color: #9a7e3a; }
+  .badge-ticketed { background: rgba(114,153,125,0.12); color: var(--green-sage); }
+  .badge-virtual  { background: rgba(48,82,58,0.08); color: var(--green-dark); }
+  .badge-hybrid   { background: rgba(193,165,95,0.1); color: var(--text-mid); }
+  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 400; line-height: 1.25; color: var(--green-dark); margin-bottom: 5px; }
+  .card-org { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--text-light); margin-bottom: 9px; }
+  .card-datetime { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 11px; }
+  .card-datetime span { font-size: 12px; color: var(--text-mid); display: flex; align-items: center; gap: 4px; }
+  .card-datetime svg { color: var(--green-sage); flex-shrink: 0; }
+  .card-desc { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 300; line-height: 1.5; color: var(--text-mid); flex: 1; margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-link { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-dark); text-decoration: none; border-bottom: 1px solid var(--gold); padding-bottom: 1px; transition: color 0.15s; align-self: flex-start; }
+  .card-link:hover { color: var(--gold); }
+
+  /* Category bar colors */
+  .cat-climate              { background: #2d5a3d; }
+  .cat-nature               { background: var(--green-sage); }
+  .cat-community            { background: var(--gold); }
+  .cat-education            { background: #5a7a6a; }
+  .cat-wellness             { background: #a0b8a8; }
+  .cat-arts                 { background: #b89a6a; }
+  .cat-volunteering         { background: #4d7060; }
+  .cat-women                { background: #8a6d8a; }
+  .cat-ocean                { background: #4a7d9a; }
+  .cat-energy               { background: #6a8a5a; }
+  .cat-csrbusiness          { background: #7a6a4a; }
+  .cat-socialimpact         { background: var(--green-dark); }
+  .cat-socialentrepreneurship { background: #b07c5a; }
+  .cat-finance              { background: #c1a55f; }
+  .cat-default              { background: var(--green-sage); }
+
+  @media (max-width: 600px) {
+    .header { padding: 28px 20px 22px; }
+    .controls { padding: 14px 20px; }
+    .main { padding: 20px 20px 48px; }
+    .events-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Juniper Collective</div>
+  <h1>LA Social Impact Events</h1>
+  <p class="header-sub">Curated events for LA's social impact community, updated weekly</p>
+</div>
+
+<div class="controls">
+  <div class="controls-inner">
+
+    <div class="search-wrap">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" type="text" id="search" placeholder="Search events...">
+    </div>
+
+    <div class="filter-groups">
+
+      <!-- Topic -->
+      <div class="filter-group" id="cat-filters">
+        <span class="filter-label">Topic</span>
+        <button class="chip" data-cat="Women"        data-tooltip="Women building community and related events">Women</button>
+        <button class="chip" data-cat="Climate"      data-tooltip="Climate action, sustainability, climate policy, climate design, green living">Climate</button>
+        <button class="chip" data-cat="Energy &amp; Tech" data-tooltip="Cleantech, energy, climate tech, innovation, startups">Energy &amp; Tech</button>
+        <button class="chip" data-cat="Nature"       data-tooltip="Parks, wildlife, native plants, restoration, biodiversity, hiking with conservation focus">Nature</button>
+        <button class="chip" data-cat="Ocean"        data-tooltip="Beach cleanups, coastal advocacy, marine education, Heal the Bay, Surfrider">Ocean</button>
+        <button class="chip" data-cat="CSR &amp; Business" data-tooltip="CSR, B Corps, corporate impact, purpose-driven business">CSR &amp; Business</button>
+        <button class="chip" data-cat="Social Impact" data-tooltip="General social impact, nonprofit, philanthropy, changemaker events">Social Impact</button>
+        <button class="chip" data-cat="Social Entrepreneurship" data-tooltip="Founders building mission-driven ventures, social enterprise pitch nights, impact startup community">Social Entrepreneurship</button>
+        <button class="chip" data-cat="Community"    data-tooltip="Inclusive hikes, wellness, relationship-building, broad purpose-driven gatherings">Community</button>
+      </div>
+
+      <!-- Cost -->
+      <div class="filter-group" id="cost-filters">
+        <span class="filter-label">Cost</span>
+        <button class="chip chip-cost" data-cost="Free">Free</button>
+        <button class="chip chip-cost" data-cost="Ticketed">Ticketed</button>
+      </div>
+
+      <!-- Format -->
+      <div class="filter-group" id="format-filters">
+        <span class="filter-label">Format</span>
+        <button class="chip chip-format" data-format="In-Person">In-Person</button>
+        <button class="chip chip-format" data-format="Virtual">Virtual</button>
+        <button class="chip chip-format" data-format="Hybrid">Hybrid</button>
+      </div>
+
+      <!-- Location — default chips + dynamic additions from data -->
+      <div class="filter-group" id="location-filters">
+        <span class="filter-label">Area</span>
+        <button class="chip chip-location" data-location="Los Angeles">Los Angeles</button>
+        <button class="chip chip-location" data-location="Westside">Westside</button>
+        <button class="chip chip-location" data-location="Westwood">Westwood</button>
+        <button class="chip chip-location" data-location="DTLA">DTLA</button>
+        <button class="chip chip-location" data-location="Silver Lake">Silver Lake</button>
+        <button class="chip chip-location" data-location="South Bay">South Bay</button>
+        <button class="chip chip-location" data-location="San Fernando Valley">San Fernando Valley</button>
+        <button class="chip chip-location" data-location="Online">Online</button>
+      </div>
+
+      <button class="clear-btn" id="clear-all">Clear all filters</button>
+
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="state" class="state-msg"><div class="spinner"></div><p>Loading events...</p></div>
+  <div id="results-bar" class="results-bar" style="display:none;">
+    <span class="results-count" id="count-label"></span>
+  </div>
+  <div class="events-grid" id="grid"></div>
+</div>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDPUhIDqWXkMLZ7LWTBRIlkOpNiZaDGVIDq5IFsn2h4oqrHoTq-hhht2j_mG2nxyI_K2nG0K1IvDYU/pub?gid=1791053541&single=true&output=csv";
+
+let allEvents   = [];
+let activeCategories = new Set();
+let activeCosts      = new Set();
+let activeFormats    = new Set();
+let activeLocations  = new Set();
+let searchQuery = "";
+
+// ── CSV parser ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = splitLine(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = splitLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h.trim()] = (vals[i] || "").trim(); });
+    return obj;
+  });
+}
+function splitLine(line) {
+  const res = []; let cur = "", q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (q && line[i+1] === '"') { cur += '"'; i++; } else q = !q; }
+    else if (c === ',' && !q) { res.push(cur); cur = ""; }
+    else cur += c;
+  }
+  res.push(cur); return res;
+}
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+function parseDate(str) {
+  if (!str) return null;
+  str = str.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y,m,d] = str.split("-").map(Number);
+    return new Date(y, m-1, d);
+  }
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+    const [m,d,y] = str.split("/").map(Number);
+    return new Date(y, m-1, d);
+  }
+  const monthNames = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  const mMatch = str.match(/([A-Za-z]+)\s+(\d{1,2})/);
+  if (mMatch) {
+    const mIdx = monthNames.indexOf(mMatch[1].toLowerCase().slice(0,3));
+    if (mIdx !== -1) {
+      const day = parseInt(mMatch[2]);
+      const now = new Date();
+      let d = new Date(now.getFullYear(), mIdx, day);
+      if (d < now) d = new Date(now.getFullYear()+1, mIdx, day);
+      return d;
+    }
+  }
+  const fullMatch = str.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+  if (fullMatch) {
+    const mIdx = monthNames.indexOf(fullMatch[1].toLowerCase().slice(0,3));
+    if (mIdx !== -1) return new Date(parseInt(fullMatch[3]), mIdx, parseInt(fullMatch[2]));
+  }
+  return null;
+}
+
+function isUpcoming(d) {
+  if (!d) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d >= today;
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
+}
+function formatTime(str) {
+  if (!str) return "";
+  const [h,m] = str.split(":").map(Number);
+  if (isNaN(h)) return str;
+  const ap = h >= 12 ? "PM" : "AM";
+  return `${h%12||12}:${String(m).padStart(2,"0")} ${ap}`;
+}
+
+// ── Category bar color ────────────────────────────────────────────────────────
+function catClass(cat) {
+  const map = {
+    "Women":"cat-women","Climate":"cat-climate","Energy & Tech":"cat-energy",
+    "Nature":"cat-nature","Ocean":"cat-ocean","CSR & Business":"cat-csrbusiness",
+    "Social Impact":"cat-socialimpact",
+    "Social Entrepreneurship":"cat-socialentrepreneurship",
+    "Finance":"cat-finance","Community":"cat-community",
+    "Education":"cat-education","Wellness":"cat-wellness","Arts":"cat-arts",
+    "Volunteering":"cat-volunteering"
+  };
+  return map[cat] || "cat-default";
+}
+
+// ── Build location chips — adds areas from data not already shown ─────────────
+function buildLocationChips(events) {
+  const container = document.getElementById("location-filters");
+  const existing = new Set(
+    [...container.querySelectorAll("[data-location]")].map(b => b.dataset.location)
+  );
+  const fromData = [...new Set(events.map(e => (e.Area||"").trim()).filter(Boolean))];
+  fromData.forEach(area => {
+    if (existing.has(area)) return;
+    const btn = document.createElement("button");
+    btn.className = "chip chip-location";
+    btn.dataset.location = area;
+    btn.textContent = area;
+    container.appendChild(btn);
+    existing.add(area);
+  });
+  container.querySelectorAll("[data-location]").forEach(btn => {
+    btn.addEventListener("click", () => toggleFilter(activeLocations, btn.dataset.location, btn, "chip-location"));
+  });
+}
+
+function toggleFilter(set, value, btn, activeClass) {
+  if (set.has(value)) { set.delete(value); btn.classList.remove("active"); }
+  else { set.add(value); btn.classList.add("active"); }
+  render();
+}
+
+function renderCard(ev) {
+  const cost   = (ev.Cost || "").trim();
+  const fmt    = (ev.Format || "In-Person").trim();
+  const link   = (ev.Link || "").trim();
+
+  const costBadge   = cost ? `<span class="badge badge-${cost.toLowerCase()}">${cost}</span>` : "";
+  const fmtBadge    = (fmt && fmt !== "In-Person") ? `<span class="badge badge-${fmt.toLowerCase().replace(/[^a-z]/g,'')}">${fmt}</span>` : "";
+
+  const dateStr = ev._date ? formatDate(ev._date) : "";
+  const timeStr = ev.Time  ? formatTime(ev.Time)  : "";
+  const area    = (ev.Area || "").trim();
+
+  const calIcon  = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+  const timeIcon = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
+  const pinIcon  = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+
+  return `
+<div class="card">
+  <div class="card-bar ${catClass(ev.Category)}"></div>
+  <div class="card-body">
+    <div class="card-meta-top">
+      <span class="card-category">${ev.Category || ""}</span>
+      <div class="card-badges">${costBadge}${fmtBadge}</div>
+    </div>
+    <div class="card-title">${ev.Title || "Untitled Event"}</div>
+    <div class="card-org">${ev.Organization || ""}</div>
+    <div class="card-datetime">
+      ${dateStr ? `<span>${calIcon}${dateStr}</span>` : ""}
+      ${timeStr ? `<span>${timeIcon}${timeStr}</span>` : ""}
+      ${area    ? `<span>${pinIcon}${area}</span>`    : ""}
+    </div>
+    ${ev.Description ? `<div class="card-desc">${ev.Description}</div>` : ""}
+    ${link ? `<a class="card-link" href="${link}" target="_blank" rel="noopener">Register &rarr;</a>` : ""}
+  </div>
+</div>`;
+}
+
+function render() {
+  const q = searchQuery.toLowerCase();
+  const filtered = allEvents.filter(ev => {
+    if (activeCategories.size && !activeCategories.has(ev.Category)) return false;
+    if (activeCosts.size      && !activeCosts.has(ev.Cost))          return false;
+    if (activeFormats.size) {
+      const fmt = ev.Format || "In-Person";
+      if (!activeFormats.has(fmt)) return false;
+    }
+    if (activeLocations.size  && !activeLocations.has((ev.Area||"").trim())) return false;
+    if (q) {
+      const hay = [ev.Title, ev.Organization, ev.Description, ev.Area, ev.Category].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const grid = document.getElementById("grid");
+  const bar  = document.getElementById("results-bar");
+
+  if (filtered.length === 0) {
+    grid.innerHTML = "";
+    bar.style.display = "none";
+    document.getElementById("state").style.display = "block";
+    document.getElementById("state").innerHTML = `<p>No events match your filters.</p>`;
+    return;
+  }
+
+  document.getElementById("state").style.display = "none";
+  bar.style.display = "flex";
+  document.getElementById("count-label").innerHTML =
+    `<strong>${filtered.length}</strong> upcoming event${filtered.length !== 1 ? "s" : ""}`;
+  grid.innerHTML = filtered.map(renderCard).join("");
+}
+
+async function loadEvents() {
+  try {
+    const res = await fetch(CSV_URL + "&t=" + Date.now());
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    allEvents = rows
+      .map(r => { r._date = parseDate(r.Date); return r; })
+      .filter(r => (r.Active || "").trim().toLowerCase() === "yes")
+      .filter(r => isUpcoming(r._date))
+      .sort((a, b) => a._date - b._date);
+
+    document.getElementById("state").style.display = "none";
+    buildLocationChips(allEvents);
+    render();
+  } catch (err) {
+    console.error(err);
+    document.getElementById("state").innerHTML =
+      `<p>Could not load events.</p><p style="font-size:11px;color:#c0392b;margin-top:8px;">${err.message}</p>`;
+  }
+}
+
+document.getElementById("search").addEventListener("input", e => {
+  searchQuery = e.target.value; render();
+});
+
+document.getElementById("cat-filters").addEventListener("click", e => {
+  const btn = e.target.closest("[data-cat]"); if (!btn) return;
+  toggleFilter(activeCategories, btn.dataset.cat, btn, "active");
+});
+
+document.getElementById("cost-filters").addEventListener("click", e => {
+  const btn = e.target.closest("[data-cost]"); if (!btn) return;
+  toggleFilter(activeCosts, btn.dataset.cost, btn, "chip-cost");
+});
+
+document.getElementById("format-filters").addEventListener("click", e => {
+  const btn = e.target.closest("[data-format]"); if (!btn) return;
+  toggleFilter(activeFormats, btn.dataset.format, btn, "chip-format");
+});
+
+document.getElementById("clear-all").addEventListener("click", () => {
+  activeCategories.clear(); activeCosts.clear();
+  activeFormats.clear(); activeLocations.clear();
+  searchQuery = "";
+  document.getElementById("search").value = "";
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  render();
+});
+
+loadEvents();
+</script>
+</body>
+</html>
