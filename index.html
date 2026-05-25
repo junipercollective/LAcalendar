@@ -148,19 +148,23 @@
   .card-link:hover { color: var(--gold); }
 
   /* Category bar + image fallback colors (one source of truth) */
+  .cat-artsculture          { background: #b89a6a; }
   .cat-climate              { background: #2d5a3d; }
-  .cat-nature               { background: var(--green-sage); }
   .cat-community            { background: var(--gold); }
+  .cat-csrbusiness          { background: #7a6a4a; }
+  .cat-energy               { background: #6a8a5a; }
+  .cat-finance              { background: #c1a55f; }
+  .cat-justiceequity        { background: #8d4f47; }
+  .cat-nature               { background: var(--green-sage); }
+  .cat-ocean                { background: #4a7d9a; }
+  .cat-socialentrepreneurship { background: #b07c5a; }
+  .cat-socialimpact         { background: var(--green-dark); }
+  .cat-women                { background: #8a6d8a; }
+  /* Legacy classes kept for back-compat with old sheet rows */
+  .cat-arts                 { background: #b89a6a; }
   .cat-education            { background: #5a7a6a; }
   .cat-wellness             { background: #a0b8a8; }
-  .cat-arts                 { background: #b89a6a; }
   .cat-volunteering         { background: #4d7060; }
-  .cat-women                { background: #8a6d8a; }
-  .cat-ocean                { background: #4a7d9a; }
-  .cat-energy               { background: #6a8a5a; }
-  .cat-csrbusiness          { background: #7a6a4a; }
-  .cat-socialimpact         { background: var(--green-dark); }
-  .cat-socialentrepreneurship { background: #b07c5a; }
   .cat-default              { background: var(--green-sage); }
 
   @media (max-width: 600px) {
@@ -209,16 +213,18 @@
   <!-- Topic panel -->
   <div class="filter-panel" data-panel="topic">
     <div class="panel-options" id="topic-options">
-      <button class="option" data-cat="Women" data-tooltip="Women building community and related events">Women</button>
-      <button class="option" data-cat="Climate" data-tooltip="Climate action, sustainability, climate policy, climate design, green living">Climate</button>
-      <button class="option" data-cat="Energy &amp; Tech" data-tooltip="Cleantech, energy, climate tech, innovation, startups">Energy &amp; Tech</button>
-      <button class="option" data-cat="Nature" data-tooltip="Parks, wildlife, native plants, restoration, biodiversity, hiking with conservation focus">Nature</button>
-      <button class="option" data-cat="Ocean" data-tooltip="Beach cleanups, coastal advocacy, marine education, Heal the Bay, Surfrider">Ocean</button>
-      <button class="option" data-cat="CSR &amp; Responsible Business" data-tooltip="CSR, B Corps, corporate impact, purpose-driven business">CSR &amp; Responsible Business</button>
-      <button class="option" data-cat="Social Impact" data-tooltip="General social impact, nonprofit, philanthropy, changemaker events">Social Impact</button>
-      <button class="option" data-cat="Social Entrepreneurship" data-tooltip="Founders building mission-driven ventures, social enterprise pitch nights, impact startup community">Social Entrepreneurship</button>
-      <button class="option" data-cat="Community" data-tooltip="Inclusive hikes, wellness, relationship-building, broad purpose-driven gatherings">Community</button>
-      <button class="option" data-cat="Volunteering" data-tooltip="Hands-on volunteer opportunities, service days, skilled volunteering">Volunteering</button>
+      <button class="option" data-cat="Arts &amp; Culture" data-tooltip="Art and ecology, creative activism, and cultural events with a social impact lens">Arts &amp; Culture</button>
+      <button class="option" data-cat="Climate &amp; Sustainability" data-tooltip="Climate action, sustainability, climate policy, climate design, green living, carbon reduction, environmental advocacy">Climate &amp; Sustainability</button>
+      <button class="option" data-cat="Community" data-tooltip="Inclusive gatherings, wellness, relationship-building, cross-sector networking, and broad purpose-driven events">Community</button>
+      <button class="option" data-cat="CSR &amp; Responsible Business" data-tooltip="Corporate social responsibility, corporate impact strategy, ESG, and responsible business practices">CSR &amp; Responsible Business</button>
+      <button class="option" data-cat="Energy &amp; Tech" data-tooltip="Cleantech, energy transition, climate tech, innovation, startups, and the intersection of technology and environmental impact">Energy &amp; Tech</button>
+      <button class="option" data-cat="Finance" data-tooltip="Impact investing, sustainable finance, ESG investing, women and wealth, and funder-related events">Finance</button>
+      <button class="option" data-cat="Justice &amp; Equity" data-tooltip="Racial justice, environmental justice, food equity, housing, immigration, and community organizing">Justice &amp; Equity</button>
+      <button class="option" data-cat="Nature" data-tooltip="Parks, conservation, wildlife, native plants, habitat restoration, biodiversity, outdoor access, and land stewardship">Nature</button>
+      <button class="option" data-cat="Ocean &amp; Coastal" data-tooltip="Beach cleanups, coastal resilience, marine education, ocean advocacy, watershed protection, and programs connecting communities to the ocean">Ocean &amp; Coastal</button>
+      <button class="option" data-cat="Social Entrepreneurship" data-tooltip="B Corps, purpose-driven business, social enterprises, and mission-driven startups">Social Entrepreneurship</button>
+      <button class="option" data-cat="Social Impact" data-tooltip="General social impact, nonprofit management, philanthropy, changemaker events, and civic engagement">Social Impact</button>
+      <button class="option" data-cat="Women" data-tooltip="Women-led and women-centered community events, networking, leadership, and advocacy across industries">Women</button>
     </div>
   </div>
 
@@ -269,40 +275,47 @@ let searchQuery = "";
 // 0 means the calendar won't try to load images for that category yet —
 // the card will show the solid category color as background instead.
 const CATEGORY_FOLDERS = {
-  "Women": "women",
-  "Climate": "climate",
-  "Energy & Tech": "energy",
-  "Nature": "nature",
-  "Ocean": "ocean",
-  "CSR & Responsible Business": "csr-business",
-  "Social Impact": "social-impact",
-  "Social Entrepreneurship": "social-entrepreneurship",
-  "Community": "community",
-  "Volunteering": "volunteering"
+  "Arts & Culture":             "arts-culture",
+  "Climate & Sustainability":   "climate-sustainability",
+  "Community":                  "community",
+  "CSR & Responsible Business": "csr-responsible-business",
+  "Energy & Tech":              "energy-tech",
+  "Finance":                    "finance",
+  "Justice & Equity":           "justice-equity",
+  "Nature":                     "nature",
+  "Ocean & Coastal":            "ocean-coastal",
+  "Social Entrepreneurship":    "social-entrepreneurship",
+  "Social Impact":              "social-impact",
+  "Women":                      "women"
 };
 const IMAGE_COUNTS = {
-  "women": 0,
-  "climate": 0,
-  "energy": 0,
-  "nature": 0,
-  "ocean": 0,
-  "csr-business": 0,
-  "social-impact": 0,
-  "social-entrepreneurship": 0,
-  "community": 0,
-  "volunteering": 0,
-  "default": 0
+  "arts-culture":              10,
+  "climate-sustainability":    8,
+  "community":                 8,
+  "csr-responsible-business":  10,
+  "energy-tech":               13,
+  "finance":                   13,
+  "justice-equity":            12,
+  "nature":                    17,
+  "ocean-coastal":             10,
+  "social-entrepreneurship":   9,
+  "social-impact":             10,
+  "women":                     14,
+  "default":                   0
 };
 
 function pickImage(ev) {
-  const folder = CATEGORY_FOLDERS[ev.Category] || "default";
+  const cats = getEventCategories(ev);
+  const primary = cats[0] || "";
+  const folder = CATEGORY_FOLDERS[primary] || "default";
   const count = IMAGE_COUNTS[folder] || 0;
   if (count === 0) return null;
   const title = ev.Title || "";
   let hash = 0;
   for (let i = 0; i < title.length; i++) hash += title.charCodeAt(i);
   const index = (hash % count) + 1;
-  return `images/${folder}/${folder}-${index}.jpg`;
+  // URL-encode to handle folder names with spaces (e.g., "Social Impact")
+  return encodeURI(`images/${folder}/${index}.png`);
 }
 
 // ── City / state / zip extraction from a free-text address ──────────────────
@@ -402,16 +415,38 @@ function formatTime(str) {
 // ── Category bar color class ─────────────────────────────────────────────────
 function catClass(cat) {
   const map = {
-    "Women":"cat-women","Climate":"cat-climate","Energy & Tech":"cat-energy",
-    "Nature":"cat-nature","Ocean":"cat-ocean",
+    "Arts & Culture":            "cat-artsculture",
+    "Climate & Sustainability":  "cat-climate",
+    "Community":                 "cat-community",
     "CSR & Responsible Business":"cat-csrbusiness",
-    "Social Impact":"cat-socialimpact",
-    "Social Entrepreneurship":"cat-socialentrepreneurship",
-    "Community":"cat-community",
-    "Education":"cat-education","Wellness":"cat-wellness","Arts":"cat-arts",
-    "Volunteering":"cat-volunteering"
+    "Energy & Tech":             "cat-energy",
+    "Finance":                   "cat-finance",
+    "Justice & Equity":          "cat-justiceequity",
+    "Nature":                    "cat-nature",
+    "Ocean & Coastal":           "cat-ocean",
+    "Social Entrepreneurship":   "cat-socialentrepreneurship",
+    "Social Impact":             "cat-socialimpact",
+    "Women":                     "cat-women",
+    // Legacy keys for back-compat with old sheet rows
+    "Climate":                   "cat-climate",
+    "Ocean":                     "cat-ocean",
+    "Arts":                      "cat-artsculture",
+    "Education":                 "cat-education",
+    "Wellness":                  "cat-wellness",
+    "Volunteering":              "cat-volunteering"
   };
   return map[cat] || "cat-default";
+}
+
+// ── Split multi-category cell into array ─────────────────────────────────────
+// Category column may hold one category ("Climate & Sustainability") or several
+// comma-separated ("Climate & Sustainability, Women, Community"). Returns the
+// list trimmed and de-empty'd. Supports comma, semicolon, or pipe as separator.
+function getEventCategories(ev) {
+  return (ev.Category || "")
+    .split(/[,;|]/)
+    .map(c => c.trim())
+    .filter(Boolean);
 }
 
 // ── Build City chips from data ───────────────────────────────────────────────
@@ -519,9 +554,14 @@ function renderCard(ev) {
     locationStr = extractCityStateZip(city);
   }
 
+  // Categories: show all on the card label, use first one for image + color bar
+  const cats = getEventCategories(ev);
+  const primaryCat = cats[0] || "";
+  const categoryDisplay = cats.join(" · ");
+  const catCls = catClass(primaryCat);
+
   // Image: use library pick or fall back to solid category color
   const imgPath = pickImage(ev);
-  const catCls = catClass(ev.Category);
   const imgHtml = imgPath
     ? `<img src="${imgPath}" alt="" onerror="this.style.display='none';this.parentNode.classList.add('${catCls}');">`
     : "";
@@ -549,7 +589,7 @@ function renderCard(ev) {
   <div class="card-bar ${catCls}"></div>
   <div class="card-body">
     <div class="card-meta-top">
-      <span class="card-category">${ev.Category || ""}</span>
+      <span class="card-category">${categoryDisplay}</span>
       ${formatTag}
     </div>
     <div class="card-title">${ev.Title || "Untitled Event"}</div>
@@ -569,7 +609,11 @@ function renderCard(ev) {
 function render() {
   const q = searchQuery.toLowerCase();
   const filtered = allEvents.filter(ev => {
-    if (activeCategories.size && !activeCategories.has(ev.Category)) return false;
+    // Topic filter: pass if ANY of the event's categories matches ANY active filter
+    if (activeCategories.size) {
+      const evCats = getEventCategories(ev);
+      if (!evCats.some(c => activeCategories.has(c))) return false;
+    }
     if (activeCosts.size      && !activeCosts.has(ev.Cost))          return false;
 
     // Virtual tri-state — Hybrid counts as both Virtual and In-Person,
