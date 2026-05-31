@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LA Social Impact Events — Juniper Collective</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600&family=Oranienbaum&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-dark:  #30523a;
+    --green-sage:  #72997d;
+    --gold:        #c1a55f;
+    --cream:       #f2ede4;
+    --cream-dark:  #e8e1d5;
+    --page-bg:     #fcfaf3;
+    --text-dark:   #1e2e23;
+    --text-mid:    #4a5e50;
+    --text-light:  #7a8f80;
+    --white:       #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--page-bg); color: var(--text-dark); font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.6; }
+
+  /* Header */
+  .header { background: var(--green-dark); padding: 48px 40px 36px; }
+  .header-label { font-size: 10px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  .header h1 { font-family: 'Oranienbaum', serif; font-size: clamp(30px, 5vw, 50px); font-weight: 400; color: var(--cream); line-height: 1.1; max-width: 600px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .header-sub { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic; font-weight: 300; color: var(--green-sage); margin-top: 12px; }
+
+  /* Controls (sticky group that grows when a panel is open) */
+  .controls { background: var(--white); border-bottom: 1px solid var(--cream-dark); position: sticky; top: 0; z-index: 100; }
+  .controls-inner { padding: 18px 40px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+
+  /* Search */
+  .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 300px; }
+  .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
+  .search-input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid var(--cream-dark); border-radius: 4px; font-family: 'Montserrat', sans-serif; font-size: 12px; background: var(--cream); color: var(--text-dark); outline: none; }
+  .search-input:focus { border-color: var(--green-sage); }
+  .search-input::placeholder { color: var(--text-light); }
+
+  /* Filter triggers row */
+  .filter-triggers { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex: 1; }
+  .filter-trigger {
+    padding: 7px 14px; border-radius: 20px;
+    border: 1px solid var(--cream-dark); background: var(--white);
+    font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-mid);
+    cursor: pointer; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .filter-trigger:hover { border-color: var(--green-sage); color: var(--green-dark); }
+  .filter-trigger.active { background: var(--green-dark); border-color: var(--green-dark); color: var(--cream); }
+  .filter-trigger.open { border-color: var(--green-dark); }
+  .filter-count {
+    background: var(--green-dark); color: var(--cream);
+    padding: 1px 7px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+    display: none;
+  }
+  .filter-trigger.active .filter-count { background: rgba(242,237,228,0.25); color: var(--cream); }
+  .filter-trigger.has-selections .filter-count { display: inline-block; }
+  .filter-caret { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
+  .filter-trigger.open .filter-caret { transform: rotate(180deg); }
+
+  /* Clear */
+  .clear-btn { font-size: 11px; font-weight: 500; color: var(--text-light); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 4px 8px; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
+  .clear-btn:hover { color: var(--green-dark); }
+
+  /* Panels (in sticky group, below triggers) */
+  .filter-panel {
+    background: var(--cream); border-top: 1px solid var(--cream-dark);
+    padding: 14px 40px;
+    display: none;
+  }
+  .filter-panel.open { display: block; }
+  .panel-options { display: flex; flex-wrap: wrap; gap: 6px; }
+  .option {
+    padding: 6px 12px; border-radius: 16px;
+    border: 1px solid var(--cream-dark); background: var(--white);
+    font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500;
+    color: var(--text-mid); cursor: pointer; transition: all 0.15s;
+    position: relative;
+  }
+  .option:hover { border-color: var(--green-sage); color: var(--green-dark); }
+  .option.selected { background: var(--green-sage); border-color: var(--green-sage); color: var(--white); }
+  .option-radio.selected { background: var(--green-dark); border-color: var(--green-dark); color: var(--cream); }
+
+  /* Tooltip on options */
+  .option[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--green-dark); color: var(--cream); font-size: 10px; font-weight: 400;
+    line-height: 1.4; padding: 7px 10px; border-radius: 4px; white-space: normal;
+    width: 220px; text-align: left; z-index: 200; pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .option[data-tooltip]:hover::before {
+    content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%;
+    transform: translateX(-50%); border: 5px solid transparent;
+    border-top-color: var(--green-dark); z-index: 200; pointer-events: none;
+  }
+
+  /* Main */
+  .main { padding: 32px 40px 60px; max-width: 1200px; }
+
+  /* State */
+  .state-msg { text-align: center; padding: 80px 40px; }
+  .spinner { width: 30px; height: 30px; border: 3px solid var(--cream-dark); border-top-color: var(--green-sage); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .state-msg p { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: var(--text-light); }
+
+  /* Results bar */
+  .results-bar { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--cream-dark); }
+  .results-count { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: var(--text-mid); }
+  .results-count strong { color: var(--green-dark); font-style: normal; font-weight: 400; }
+
+  /* Grid */
+  .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+
+  /* Card */
+  .card { background: var(--white); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s, box-shadow 0.15s; border: 1px solid transparent; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(48,82,58,0.1); border-color: var(--cream-dark); }
+
+  /* Card image at top */
+  .card-image { position: relative; aspect-ratio: 4/3; overflow: hidden; background: var(--green-sage); }
+  .card-image img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
+  .card-price {
+    position: absolute; top: 12px; right: 12px;
+    background: var(--white); color: var(--green-dark);
+    font-family: 'Montserrat', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 0.04em;
+    padding: 5px 12px; border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  /* Card body */
+  .card-bar { display: none; } /* retired - image area flows straight into body now */
+  .card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
+  .card-meta-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; gap: 8px; }
+  .card-category { font-size: 9px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-light); }
+  .card-format-tag { font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; background: rgba(193,165,95,0.15); color: #9a7e3a; }
+  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 400; line-height: 1.25; color: var(--green-dark); margin-bottom: 5px; }
+  .card-org { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--text-light); margin-bottom: 9px; }
+  .card-datetime { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 11px; }
+  .card-datetime span { font-size: 12px; color: var(--text-mid); display: flex; align-items: center; gap: 4px; }
+  .card-datetime svg { color: var(--green-sage); flex-shrink: 0; }
+  .card-desc { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 300; line-height: 1.5; color: var(--text-mid); flex: 1; margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-link { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-dark); text-decoration: none; border-bottom: 1px solid var(--gold); padding-bottom: 1px; transition: color 0.15s; align-self: flex-start; }
+  .card-link:hover { color: var(--gold); }
+
+  /* All categories share the sage background. Per-category colors were
+     visually cluttering across a full calendar view. Classes remain so any
+     image-fallback or future use sites stay wired up. */
+  .cat-artsculture          { background: var(--green-sage); }
+  .cat-climate              { background: var(--green-sage); }
+  .cat-community            { background: var(--green-sage); }
+  .cat-csrbusiness          { background: var(--green-sage); }
+  .cat-energy               { background: var(--green-sage); }
+  .cat-finance              { background: var(--green-sage); }
+  .cat-justiceequity        { background: var(--green-sage); }
+  .cat-nature               { background: var(--green-sage); }
+  .cat-ocean                { background: var(--green-sage); }
+  .cat-socialentrepreneurship { background: var(--green-sage); }
+  .cat-socialimpact         { background: var(--green-sage); }
+  .cat-women                { background: var(--green-sage); }
+  /* Legacy classes kept for back-compat with old sheet rows */
+  .cat-arts                 { background: var(--green-sage); }
+  .cat-education            { background: var(--green-sage); }
+  .cat-wellness             { background: var(--green-sage); }
+  .cat-volunteering         { background: var(--green-sage); }
+  .cat-default              { background: var(--green-sage); }
+
+  @media (max-width: 600px) {
+    .header { padding: 28px 20px 22px; }
+    .controls-inner { padding: 14px 20px; }
+    .filter-panel { padding: 12px 20px; }
+    .main { padding: 20px 20px 48px; }
+    .events-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Juniper Collective</div>
+  <h1>LA Social Impact Events</h1>
+  <p class="header-sub">Curated events for LA's social impact community, updated weekly</p>
+</div>
+
+<div class="controls">
+  <div class="controls-inner">
+
+    <div class="search-wrap">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" type="text" id="search" placeholder="Search events...">
+    </div>
+
+    <div class="filter-triggers">
+      <button class="filter-trigger" data-filter="topic">
+        Topic <span class="filter-count">0</span><span class="filter-caret">&#9662;</span>
+      </button>
+      <button class="filter-trigger" data-filter="cost">
+        Cost <span class="filter-count">0</span><span class="filter-caret">&#9662;</span>
+      </button>
+      <button class="filter-trigger" data-filter="virtual">
+        Virtual <span class="filter-count">0</span><span class="filter-caret">&#9662;</span>
+      </button>
+      <button class="filter-trigger" data-filter="region">
+        Region <span class="filter-count">0</span><span class="filter-caret">&#9662;</span>
+      </button>
+      <button class="filter-trigger" data-filter="city">
+        City <span class="filter-count">0</span><span class="filter-caret">&#9662;</span>
+      </button>
+      <button class="clear-btn" id="clear-all">Clear all</button>
+    </div>
+
+  </div>
+
+  <!-- Topic panel -->
+  <div class="filter-panel" data-panel="topic">
+    <div class="panel-options" id="topic-options">
+      <button class="option" data-cat="Arts &amp; Culture" data-tooltip="Art and ecology, creative activism, and cultural events with a social impact lens">Arts &amp; Culture</button>
+      <button class="option" data-cat="Climate &amp; Sustainability" data-tooltip="Climate action, sustainability, climate policy, climate design, green living, carbon reduction, environmental advocacy">Climate &amp; Sustainability</button>
+      <button class="option" data-cat="Community" data-tooltip="Inclusive gatherings, wellness, relationship-building, cross-sector networking, and broad purpose-driven events">Community</button>
+      <button class="option" data-cat="CSR &amp; Responsible Business" data-tooltip="Corporate social responsibility, corporate impact strategy, ESG, and responsible business practices">CSR &amp; Responsible Business</button>
+      <button class="option" data-cat="Energy &amp; Tech" data-tooltip="Cleantech, energy transition, climate tech, innovation, startups, and the intersection of technology and environmental impact">Energy &amp; Tech</button>
+      <button class="option" data-cat="Finance" data-tooltip="Impact investing, sustainable finance, ESG investing, women and wealth, and funder-related events">Finance</button>
+      <button class="option" data-cat="Justice &amp; Equity" data-tooltip="Racial justice, environmental justice, food equity, housing, immigration, and community organizing">Justice &amp; Equity</button>
+      <button class="option" data-cat="Nature" data-tooltip="Parks, conservation, wildlife, native plants, habitat restoration, biodiversity, outdoor access, and land stewardship">Nature</button>
+      <button class="option" data-cat="Ocean &amp; Coastal" data-tooltip="Beach cleanups, coastal resilience, marine education, ocean advocacy, watershed protection, and programs connecting communities to the ocean">Ocean &amp; Coastal</button>
+      <button class="option" data-cat="Social Entrepreneurship" data-tooltip="B Corps, purpose-driven business, social enterprises, and mission-driven startups">Social Entrepreneurship</button>
+      <button class="option" data-cat="Social Impact" data-tooltip="General social impact, nonprofit management, philanthropy, changemaker events, and civic engagement">Social Impact</button>
+      <button class="option" data-cat="Women" data-tooltip="Women-led and women-centered community events, networking, leadership, and advocacy across industries">Women</button>
+    </div>
+  </div>
+
+  <!-- Cost panel -->
+  <div class="filter-panel" data-panel="cost">
+    <div class="panel-options" id="cost-options">
+      <button class="option" data-cost="Free">Free</button>
+      <button class="option" data-cost="Ticketed">Ticketed</button>
+    </div>
+  </div>
+
+  <!-- Virtual panel (tri-state: only one selected at a time) -->
+  <div class="filter-panel" data-panel="virtual">
+    <div class="panel-options" id="virtual-options">
+      <button class="option option-radio selected" data-virtual="all">Show all events</button>
+      <button class="option option-radio" data-virtual="only">Show only virtual events</button>
+      <button class="option option-radio" data-virtual="hide">Hide virtual events</button>
+    </div>
+  </div>
+
+  <!-- City panel (populated dynamically from data) -->
+  <div class="filter-panel" data-panel="city">
+    <div class="panel-options" id="city-options"></div>
+  </div>
+
+  <!-- Region panel (populated dynamically from data) -->
+  <div class="filter-panel" data-panel="region">
+    <div class="panel-options" id="region-options"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="state" class="state-msg"><div class="spinner"></div><p>Loading events...</p></div>
+  <div id="results-bar" class="results-bar" style="display:none;">
+    <span class="results-count" id="count-label"></span>
+  </div>
+  <div class="events-grid" id="grid"></div>
+</div>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDPUhIDqWXkMLZ7LWTBRIlkOpNiZaDGVIDq5IFsn2h4oqrHoTq-hhht2j_mG2nxyI_K2nG0K1IvDYU/pub?gid=1791053541&single=true&output=csv";
+
+let allEvents   = [];
+let activeCategories = new Set();
+let activeCosts      = new Set();
+let activeCities     = new Set();
+let activeRegions    = new Set();
+let virtualState     = "all"; // "all" | "only" | "hide"
+let searchQuery = "";
+
+// ── Image library (deterministic pick by event title) ───────────────────────
+// Folder convention: /images/{folder}/{folder}-{n}.jpg
+// Update the count for a category once you've uploaded that many images.
+// 0 means the calendar won't try to load images for that category yet —
+// the card will show the solid category color as background instead.
+const CATEGORY_FOLDERS = {
+  "Arts & Culture":             "arts-culture",
+  "Climate & Sustainability":   "climate-sustainability",
+  "Community":                  "community",
+  "CSR & Responsible Business": "csr-responsible-business",
+  "Energy & Tech":              "energy-tech",
+  "Finance":                    "finance",
+  "Justice & Equity":           "justice-equity",
+  "Nature":                     "nature",
+  "Ocean & Coastal":            "ocean-coastal",
+  "Social Entrepreneurship":    "social-entrepreneurship",
+  "Social Impact":              "social-impact",
+  "Women":                      "women"
+};
+const IMAGE_COUNTS = {
+  "arts-culture":              3,
+  "climate-sustainability":    3,
+  "community":                 3,
+  "csr-responsible-business":  3,
+  "energy-tech":               3,
+  "finance":                   3,
+  "justice-equity":            3,
+  "nature":                    5,
+  "ocean-coastal":             4,
+  "social-entrepreneurship":   3,
+  "social-impact":             3,
+  "women":                     3,
+  "default":                   0
+};
+
+function pickImage(ev) {
+  const cats = getEventCategories(ev);
+  // Walk through every category on the event, not just the first one. Pick
+  // the first that has a mapped image folder with images in it. This way an
+  // event tagged "Politics · Community" still gets the community image rather
+  // than nothing, even if "Politics" isn't a key in CATEGORY_FOLDERS.
+  let folder = null;
+  let count = 0;
+  for (const cat of cats) {
+    const f = CATEGORY_FOLDERS[cat];
+    if (f && IMAGE_COUNTS[f] > 0) {
+      folder = f;
+      count = IMAGE_COUNTS[f];
+      break;
+    }
+  }
+  // Last resort: nature has the most images and reads as on-brand for any
+  // social-impact event. Beats showing a blank sage block.
+  if (!folder) {
+    folder = "nature";
+    count = IMAGE_COUNTS.nature || 0;
+  }
+  if (count === 0) return null;
+  // djb2 string hash — better distribution than summing char codes.
+  // Hash by Link first (more unique per event), fall back to Title.
+  const hashInput = ev.Link || ev.Title || "";
+  let hash = 5381;
+  for (let i = 0; i < hashInput.length; i++) {
+    hash = ((hash * 33) ^ hashInput.charCodeAt(i)) >>> 0;
+  }
+  const index = (hash % count) + 1;
+  // URL-encode to handle folder names with spaces (e.g., "Social Impact")
+  return encodeURI(`images/${folder}/${index}.png`);
+}
+
+// ── City / state / zip extraction from a free-text address ──────────────────
+function extractCityStateZip(address) {
+  if (!address) return "";
+  const match = address.match(/([A-Za-z][A-Za-z\s.'-]+),\s*([A-Z]{2})(?:\s+(\d{5}))?[^,]*$/);
+  if (match) {
+    const city = match[1].trim();
+    const state = match[2];
+    const zip = match[3];
+    return zip ? `${city}, ${state} ${zip}` : `${city}, ${state}`;
+  }
+  return address;
+}
+
+// ── Price formatting ─────────────────────────────────────────────────────────
+// Normalizes whatever's in the Cost cell into one of three display states:
+//   "Free"      — empty, "Free", $0, 0, 0.00 (all functionally free)
+//   "$NN"       — any real price; preserves existing $ or adds one
+//   "Ticketed"  — anything else (Donation, "Ticketed", "TBD", unknown formats)
+function formatPrice(cost) {
+  if (!cost) return "Free";
+  const c = cost.trim();
+  if (/^free$/i.test(c)) return "Free";
+  // $0 / $0.00 / 0 / 0.00 — functionally free
+  if (/^\$?0+(\.0+)?$/.test(c)) return "Free";
+  if (/^\$/.test(c)) return c;
+  if (/^\d/.test(c)) return `$${c}`;
+  return c;
+}
+
+// ── CSV parser ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = splitLine(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = splitLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h.trim()] = (vals[i] || "").trim(); });
+    return obj;
+  });
+}
+function splitLine(line) {
+  const res = []; let cur = "", q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (q && line[i+1] === '"') { cur += '"'; i++; } else q = !q; }
+    else if (c === ',' && !q) { res.push(cur); cur = ""; }
+    else cur += c;
+  }
+  res.push(cur); return res;
+}
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+function parseDate(str) {
+  if (!str) return null;
+  str = str.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y,m,d] = str.split("-").map(Number);
+    return new Date(y, m-1, d);
+  }
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+    const [m,d,y] = str.split("/").map(Number);
+    return new Date(y, m-1, d);
+  }
+  const monthNames = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  const mMatch = str.match(/([A-Za-z]+)\s+(\d{1,2})/);
+  if (mMatch) {
+    const mIdx = monthNames.indexOf(mMatch[1].toLowerCase().slice(0,3));
+    if (mIdx !== -1) {
+      const day = parseInt(mMatch[2]);
+      const now = new Date();
+      let d = new Date(now.getFullYear(), mIdx, day);
+      if (d < now) d = new Date(now.getFullYear()+1, mIdx, day);
+      return d;
+    }
+  }
+  const fullMatch = str.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+  if (fullMatch) {
+    const mIdx = monthNames.indexOf(fullMatch[1].toLowerCase().slice(0,3));
+    if (mIdx !== -1) return new Date(parseInt(fullMatch[3]), mIdx, parseInt(fullMatch[2]));
+  }
+  return null;
+}
+
+function isUpcoming(d) {
+  if (!d) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d >= today;
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
+}
+function formatTime(str) {
+  if (!str) return "";
+  const [h,m] = str.split(":").map(Number);
+  if (isNaN(h)) return str;
+  const ap = h >= 12 ? "PM" : "AM";
+  return `${h%12||12}:${String(m).padStart(2,"0")} ${ap}`;
+}
+
+// ── Category bar color class ─────────────────────────────────────────────────
+function catClass(cat) {
+  const map = {
+    "Arts & Culture":            "cat-artsculture",
+    "Climate & Sustainability":  "cat-climate",
+    "Community":                 "cat-community",
+    "CSR & Responsible Business":"cat-csrbusiness",
+    "Energy & Tech":             "cat-energy",
+    "Finance":                   "cat-finance",
+    "Justice & Equity":          "cat-justiceequity",
+    "Nature":                    "cat-nature",
+    "Ocean & Coastal":           "cat-ocean",
+    "Social Entrepreneurship":   "cat-socialentrepreneurship",
+    "Social Impact":             "cat-socialimpact",
+    "Women":                     "cat-women",
+    // Legacy keys for back-compat with old sheet rows
+    "Climate":                   "cat-climate",
+    "Ocean":                     "cat-ocean",
+    "Arts":                      "cat-artsculture",
+    "Education":                 "cat-education",
+    "Wellness":                  "cat-wellness",
+    "Volunteering":              "cat-volunteering"
+  };
+  return map[cat] || "cat-default";
+}
+
+// ── Split multi-category cell into array ─────────────────────────────────────
+// Category column may hold one category ("Climate & Sustainability") or several
+// comma-separated ("Climate & Sustainability, Women, Community"). Returns the
+// list trimmed and de-empty'd. Supports comma, semicolon, or pipe as separator.
+function getEventCategories(ev) {
+  return (ev.Category || "")
+    .split(/[,;|]/)
+    .map(c => c.trim())
+    .filter(Boolean);
+}
+
+// ── Build City chips from data ───────────────────────────────────────────────
+function buildCityChips(events) {
+  const container = document.getElementById("city-options");
+  // Read from City (new column) or Area (legacy column) for back-compat
+  const cities = [...new Set(
+    events
+      .map(e => (e.City || e.Area || "").trim())
+      .filter(c => c && !/\d/.test(c) && c.length < 40) // exclude raw addresses
+  )].sort((a,b) => a === "Online" ? 1 : b === "Online" ? -1 : a.localeCompare(b));
+
+  container.innerHTML = cities.map(c =>
+    `<button class="option" data-city="${c.replace(/"/g,'&quot;')}">${c}</button>`
+  ).join("");
+
+  container.querySelectorAll("[data-city]").forEach(btn => {
+    btn.addEventListener("click", () => toggleMulti(activeCities, btn.dataset.city, btn, "city"));
+  });
+}
+
+// ── Build Region chips from data ─────────────────────────────────────────────
+// Only shows regions that have at least one event in the data (dynamic).
+// Excludes "Unknown - Needs Review" so it doesn't appear as a public filter.
+function buildRegionChips(events) {
+  const container = document.getElementById("region-options");
+  const regions = [...new Set(
+    events
+      .map(e => (e.Region || "").trim())
+      .filter(r => r && r !== "Unknown - Needs Review")
+  )].sort((a,b) => a === "Online" ? 1 : b === "Online" ? -1 : a.localeCompare(b));
+
+  container.innerHTML = regions.map(r =>
+    `<button class="option" data-region="${r.replace(/"/g,'&quot;')}">${r}</button>`
+  ).join("");
+
+  container.querySelectorAll("[data-region]").forEach(btn => {
+    btn.addEventListener("click", () => toggleMulti(activeRegions, btn.dataset.region, btn, "region"));
+  });
+}
+
+// ── Filter trigger panel toggle ──────────────────────────────────────────────
+function setupFilterTriggers() {
+  const triggers = document.querySelectorAll(".filter-trigger");
+  const panels = document.querySelectorAll(".filter-panel");
+
+  triggers.forEach(t => {
+    t.addEventListener("click", () => {
+      const target = t.dataset.filter;
+      const wasOpen = t.classList.contains("open");
+      triggers.forEach(tr => tr.classList.remove("open"));
+      panels.forEach(p => p.classList.remove("open"));
+      if (!wasOpen) {
+        t.classList.add("open");
+        document.querySelector(`[data-panel="${target}"]`).classList.add("open");
+      }
+    });
+  });
+
+  // Close panels when clicking outside the controls bar
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".controls")) {
+      triggers.forEach(tr => tr.classList.remove("open"));
+      panels.forEach(p => p.classList.remove("open"));
+    }
+  });
+}
+
+// ── Filter selection handlers ────────────────────────────────────────────────
+function toggleMulti(set, value, btn, filterKey) {
+  if (set.has(value)) { set.delete(value); btn.classList.remove("selected"); }
+  else { set.add(value); btn.classList.add("selected"); }
+  updateTriggerCount(filterKey, set.size);
+  render();
+}
+
+function setVirtualState(value) {
+  virtualState = value;
+  document.querySelectorAll('[data-virtual]').forEach(b => {
+    b.classList.toggle("selected", b.dataset.virtual === value);
+  });
+  // Trigger shows active state only if not "all"
+  const trig = document.querySelector('[data-filter="virtual"]');
+  if (value === "all") {
+    trig.classList.remove("active", "has-selections");
+    trig.querySelector(".filter-count").style.display = "none";
+  } else {
+    trig.classList.add("active");
+    // Use a dot indicator instead of count for tri-state
+    const label = value === "only" ? "•" : "—";
+    const countEl = trig.querySelector(".filter-count");
+    countEl.textContent = label;
+    countEl.style.display = "inline-block";
+  }
+  render();
+}
+
+function updateTriggerCount(filterKey, count) {
+  const trig = document.querySelector(`[data-filter="${filterKey}"]`);
+  const countEl = trig.querySelector(".filter-count");
+  if (count > 0) {
+    countEl.textContent = count;
+    countEl.style.display = "inline-block";
+    trig.classList.add("active", "has-selections");
+  } else {
+    countEl.style.display = "none";
+    trig.classList.remove("active", "has-selections");
+  }
+}
+
+// ── Card render ──────────────────────────────────────────────────────────────
+function renderCard(ev) {
+  const fmt    = (ev.Format || "In-Person").trim();
+  const link   = (ev.Link || "").trim();
+  const city   = (ev.City || ev.Area || "").trim();
+
+  const dateStr = ev._date ? formatDate(ev._date) : "";
+  const timeStr = ev.Time  ? formatTime(ev.Time)  : "";
+
+  // Location line: virtual shows "Online", anything that means "no real city"
+  // (empty, TBD, Unknown, "Unknown - Needs Review", any casing) shows
+  // "Location TBD". Otherwise pull city/state/zip out of the address.
+  let locationStr = "";
+  const cityNorm = (city || "").trim().toLowerCase();
+  const tbdValues = ["", "tbd", "unknown", "unknown - needs review"];
+  if (fmt === "Virtual" || city === "Online") {
+    locationStr = "Online";
+  } else if (tbdValues.includes(cityNorm)) {
+    locationStr = "Location TBD";
+  } else {
+    locationStr = extractCityStateZip(city);
+  }
+
+  // Categories: show all on the card label, use first one for image + color bar
+  const cats = getEventCategories(ev);
+  const primaryCat = cats[0] || "";
+  const categoryDisplay = cats.join(" · ");
+  const catCls = catClass(primaryCat);
+
+  // Image: use library pick or fall back to solid category color
+  const imgPath = pickImage(ev);
+  const imgHtml = imgPath
+    ? `<img src="${imgPath}" alt="" onerror="this.style.display='none';this.parentNode.classList.add('${catCls}');">`
+    : "";
+
+  // Price pill
+  const price = formatPrice(ev.Cost);
+
+  // Format tag (only show if not plain In-Person, sits in card body)
+  const formatTag = fmt === "Hybrid"
+    ? `<span class="card-format-tag">Hybrid</span>`
+    : fmt === "Virtual"
+    ? `<span class="card-format-tag" style="background:rgba(48,82,58,0.08);color:var(--green-dark);">Virtual</span>`
+    : "";
+
+  const calIcon  = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+  const timeIcon = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
+  const pinIcon  = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+
+  return `
+<div class="card">
+  <div class="card-image ${catCls}">
+    ${imgHtml}
+    <span class="card-price">${price}</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta-top">
+      <span class="card-category">${categoryDisplay}</span>
+      ${formatTag}
+    </div>
+    <div class="card-title">${ev.Title || "Untitled Event"}</div>
+    <div class="card-org">${ev.Organization || ""}</div>
+    <div class="card-datetime">
+      ${dateStr ? `<span>${calIcon}${dateStr}</span>` : ""}
+      ${timeStr ? `<span>${timeIcon}${timeStr}</span>` : ""}
+      ${locationStr ? `<span>${pinIcon}${locationStr}</span>` : ""}
+    </div>
+    ${ev.Description ? `<div class="card-desc">${ev.Description}</div>` : ""}
+    ${link ? `<a class="card-link" href="${link}" target="_blank" rel="noopener">Register &rarr;</a>` : ""}
+  </div>
+</div>`;
+}
+
+// ── Main render with filters applied ────────────────────────────────────────
+function render() {
+  const q = searchQuery.toLowerCase();
+  const filtered = allEvents.filter(ev => {
+    // Topic filter: pass if ANY of the event's categories matches ANY active filter
+    if (activeCategories.size) {
+      const evCats = getEventCategories(ev);
+      if (!evCats.some(c => activeCategories.has(c))) return false;
+    }
+    // Cost filter: chips are "Free" and "Ticketed" categories, but the data
+    // can hold real prices like "$15" or "$10-50". Treat anything non-Free
+    // and non-empty as Ticketed for filter purposes.
+    if (activeCosts.size) {
+      const cost = (ev.Cost || "").trim();
+      const isFree = !cost || cost.toLowerCase() === "free";
+      const matches = (isFree && activeCosts.has("Free"))
+                   || (!isFree && activeCosts.has("Ticketed"));
+      if (!matches) return false;
+    }
+
+    // Virtual tri-state — Hybrid counts as both Virtual and In-Person,
+    // so it shows in "only virtual" and "hide virtual" alike
+    const fmt = (ev.Format || "In-Person").trim();
+    if (virtualState === "only" && fmt !== "Virtual" && fmt !== "Hybrid") return false;
+    if (virtualState === "hide" && fmt === "Virtual") return false;
+
+    // City filter
+    if (activeCities.size) {
+      const city = (ev.City || ev.Area || "").trim();
+      if (!activeCities.has(city)) return false;
+    }
+
+    // Region filter
+    if (activeRegions.size) {
+      const region = (ev.Region || "").trim();
+      if (!activeRegions.has(region)) return false;
+    }
+
+    if (q) {
+      const hay = [ev.Title, ev.Organization, ev.Description, ev.City, ev.Area, ev.Region, ev.Category].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const grid = document.getElementById("grid");
+  const bar  = document.getElementById("results-bar");
+
+  if (filtered.length === 0) {
+    grid.innerHTML = "";
+    bar.style.display = "none";
+    document.getElementById("state").style.display = "block";
+    document.getElementById("state").innerHTML = `<p>No events match your filters.</p>`;
+    return;
+  }
+
+  document.getElementById("state").style.display = "none";
+  bar.style.display = "flex";
+  document.getElementById("count-label").innerHTML =
+    `<strong>${filtered.length}</strong> upcoming event${filtered.length !== 1 ? "s" : ""}`;
+  grid.innerHTML = filtered.map(renderCard).join("");
+}
+
+// ── Load events from CSV ────────────────────────────────────────────────────
+async function loadEvents() {
+  try {
+    const res = await fetch(CSV_URL + "&t=" + Date.now());
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    allEvents = rows
+      .map(r => { r._date = parseDate(r.Date); return r; })
+      .filter(r => (r.Active || "").trim().toLowerCase() === "yes")
+      .filter(r => isUpcoming(r._date))
+      .sort((a, b) => a._date - b._date);
+
+    document.getElementById("state").style.display = "none";
+    buildCityChips(allEvents);
+    buildRegionChips(allEvents);
+    render();
+  } catch (err) {
+    console.error(err);
+    document.getElementById("state").innerHTML =
+      `<p>Could not load events.</p><p style="font-size:11px;color:#c0392b;margin-top:8px;">${err.message}</p>`;
+  }
+}
+
+// ── Event listeners ─────────────────────────────────────────────────────────
+setupFilterTriggers();
+
+document.getElementById("search").addEventListener("input", e => {
+  searchQuery = e.target.value; render();
+});
+
+document.getElementById("topic-options").addEventListener("click", e => {
+  const btn = e.target.closest("[data-cat]"); if (!btn) return;
+  toggleMulti(activeCategories, btn.dataset.cat, btn, "topic");
+});
+
+document.getElementById("cost-options").addEventListener("click", e => {
+  const btn = e.target.closest("[data-cost]"); if (!btn) return;
+  toggleMulti(activeCosts, btn.dataset.cost, btn, "cost");
+});
+
+document.getElementById("virtual-options").addEventListener("click", e => {
+  const btn = e.target.closest("[data-virtual]"); if (!btn) return;
+  setVirtualState(btn.dataset.virtual);
+});
+
+document.getElementById("clear-all").addEventListener("click", () => {
+  activeCategories.clear(); activeCosts.clear(); activeCities.clear(); activeRegions.clear();
+  virtualState = "all";
+  searchQuery = "";
+  document.getElementById("search").value = "";
+  document.querySelectorAll(".option").forEach(c => c.classList.remove("selected"));
+  document.querySelector('[data-virtual="all"]').classList.add("selected");
+  document.querySelectorAll(".filter-trigger").forEach(t => {
+    t.classList.remove("active", "has-selections", "open");
+    t.querySelector(".filter-count").style.display = "none";
+  });
+  document.querySelectorAll(".filter-panel").forEach(p => p.classList.remove("open"));
+  render();
+});
+
+// Pass height to parent (for Showit iframe embed)
+(function() {
+  function postHeight() {
+    const height = document.documentElement.scrollHeight;
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "juniper-calendar-height", height: height }, "*");
+    }
+  }
+  window.addEventListener("load", postHeight);
+  window.addEventListener("resize", postHeight);
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(postHeight).observe(document.body);
+  } else {
+    setInterval(postHeight, 500);
+  }
+})();
+
+loadEvents();
+</script>
+</body>
+</html>
