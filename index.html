@@ -281,74 +281,42 @@ let activeRegions    = new Set();
 let virtualState     = "all"; // "all" | "only" | "hide"
 let searchQuery = "";
 
-// ── Image library (deterministic pick by event title) ───────────────────────
-// Folder convention: /images/{folder}/{folder}-{n}.jpg
-// Update the count for a category once you've uploaded that many images.
-// 0 means the calendar won't try to load images for that category yet —
-// the card will show the solid category color as background instead.
-const CATEGORY_FOLDERS = {
-  "Arts & Culture":             "arts-culture",
-  "Climate & Sustainability":   "climate-sustainability",
-  "Community":                  "community",
-  "CSR & Responsible Business": "csr-responsible-business",
-  "Energy & Tech":              "energy-tech",
-  "Finance":                    "finance",
-  "Justice & Equity":           "justice-equity",
-  "Nature":                     "nature",
-  "Ocean & Coastal":            "ocean-coastal",
-  "Social Entrepreneurship":    "social-entrepreneurship",
-  "Social Impact":              "social-impact",
-  "Women":                      "women"
-};
-const IMAGE_COUNTS = {
-  "arts-culture":              3,
-  "climate-sustainability":    3,
-  "community":                 3,
-  "csr-responsible-business":  3,
-  "energy-tech":               3,
-  "finance":                   3,
-  "justice-equity":            3,
-  "nature":                    5,
-  "ocean-coastal":             4,
-  "social-entrepreneurship":   3,
-  "social-impact":             3,
-  "women":                     3,
-  "default":                   0
-};
+// ── Image library (flat folder, shuffled, assigned by card position) ────────
+// All images live in one folder: images/1.png .. images/{IMAGE_POOL_SIZE}.png,
+// not tied to topics. Images are handed out by card position walking a fixed
+// shuffled order of the pool, which gives three things:
+//   - every image is used once before any repeats (least duplication),
+//   - a repeat only happens IMAGE_POOL_SIZE cards later, so never adjacent, and
+//   - because the order is shuffled, sequentially named lookalikes (1 next to
+//     2) never land side by side.
+// To add or remove images, change IMAGE_POOL_SIZE to match how many files are
+// in the folder (named 1..N). Change IMAGE_EXT if they aren't .png.
+const IMAGE_POOL_SIZE = 130;
+const IMAGE_EXT = "png";
 
-function pickImage(ev) {
-  const cats = getEventCategories(ev);
-  // Walk through every category on the event, not just the first one. Pick
-  // the first that has a mapped image folder with images in it. This way an
-  // event tagged "Politics · Community" still gets the community image rather
-  // than nothing, even if "Politics" isn't a key in CATEGORY_FOLDERS.
-  let folder = null;
-  let count = 0;
-  for (const cat of cats) {
-    const f = CATEGORY_FOLDERS[cat];
-    if (f && IMAGE_COUNTS[f] > 0) {
-      folder = f;
-      count = IMAGE_COUNTS[f];
-      break;
-    }
+// Deterministic shuffle of [1..n]. Fixed seed, so the order is stable across
+// page loads (no flicker) but looks random.
+function shuffledPool(n) {
+  const arr = Array.from({ length: n }, (_, i) => i + 1);
+  let seed = 0x9e3779b9;
+  const rand = () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  // Last resort: nature has the most images and reads as on-brand for any
-  // social-impact event. Beats showing a blank sage block.
-  if (!folder) {
-    folder = "nature";
-    count = IMAGE_COUNTS.nature || 0;
-  }
-  if (count === 0) return null;
-  // djb2 string hash — better distribution than summing char codes.
-  // Hash by Link first (more unique per event), fall back to Title.
-  const hashInput = ev.Link || ev.Title || "";
-  let hash = 5381;
-  for (let i = 0; i < hashInput.length; i++) {
-    hash = ((hash * 33) ^ hashInput.charCodeAt(i)) >>> 0;
-  }
-  const index = (hash % count) + 1;
-  // URL-encode to handle folder names with spaces (e.g., "Social Impact")
-  return encodeURI(`images/${folder}/${index}.png`);
+  return arr;
+}
+const IMAGE_ORDER = shuffledPool(IMAGE_POOL_SIZE);
+
+function pickImage(position) {
+  if (!IMAGE_POOL_SIZE) return null;
+  const n = IMAGE_ORDER[position % IMAGE_POOL_SIZE];
+  return `images/${n}.${IMAGE_EXT}`;
 }
 
 // ── City / state / zip extraction from a free-text address ──────────────────
@@ -597,7 +565,7 @@ function updateTriggerCount(filterKey, count) {
 }
 
 // ── Card render ──────────────────────────────────────────────────────────────
-function renderCard(ev) {
+function renderCard(ev, position) {
   const fmt    = (ev.Format || "In-Person").trim();
   const link   = (ev.Link || "").trim();
   const city   = (ev.City || ev.Area || "").trim();
@@ -625,8 +593,9 @@ function renderCard(ev) {
   const categoryDisplay = cats.join(" · ");
   const catCls = catClass(primaryCat);
 
-  // Image: use library pick or fall back to solid category color
-  const imgPath = pickImage(ev);
+  // Image: assigned by card position from the shuffled pool; falls back to the
+  // solid sage block if the file is missing (e.g. IMAGE_POOL_SIZE set too high)
+  const imgPath = pickImage(position);
   const imgHtml = imgPath
     ? `<img src="${imgPath}" alt="" onerror="this.style.display='none';this.parentNode.classList.add('${catCls}');">`
     : "";
@@ -729,7 +698,7 @@ function render() {
   bar.style.display = "flex";
   document.getElementById("count-label").innerHTML =
     `<strong>${filtered.length}</strong> upcoming event${filtered.length !== 1 ? "s" : ""}`;
-  grid.innerHTML = filtered.map(renderCard).join("");
+  grid.innerHTML = filtered.map((ev, i) => renderCard(ev, i)).join("");
 }
 
 // ── Load events from CSV ────────────────────────────────────────────────────
