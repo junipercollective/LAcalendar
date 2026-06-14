@@ -774,20 +774,41 @@ document.getElementById("clear-all").addEventListener("click", () => {
   render();
 });
 
-// Pass height to parent (for Showit iframe embed)
+// Pass height to parent (for Showit iframe embed).
+// The calendar lives in a fixed-size Showit embed box. On mobile that box is
+// short and clips the list (iOS Safari also forces an iframe to its content
+// height and ignores CSS height), so the box must be told how tall to grow.
+// We post the real content height to the parent; the matching listener in the
+// Showit embed sets the iframe height. See SHOWIT_EMBED.md for that snippet.
 (function() {
+  let lastHeight = 0;
+  function measure() {
+    const b = document.body, d = document.documentElement;
+    return Math.max(
+      b.scrollHeight, b.offsetHeight,
+      d.scrollHeight, d.offsetHeight
+    );
+  }
   function postHeight() {
-    const height = document.documentElement.scrollHeight;
+    const height = measure();
+    if (height === lastHeight) return; // don't spam identical values / loop resizes
+    lastHeight = height;
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ type: "juniper-calendar-height", height: height }, "*");
     }
   }
-  window.addEventListener("load", postHeight);
-  window.addEventListener("resize", postHeight);
+  // Initial + on resize/rotate (mobile rotation changes the single-column height).
+  ["load", "resize", "orientationchange"].forEach(ev =>
+    window.addEventListener(ev, postHeight)
+  );
+  // Delayed sends catch async font loads, image loads, and the CSV fetch that
+  // renders the cards after first paint — without these mobile reports a height
+  // measured before the events exist.
+  [100, 400, 800, 1500, 3000].forEach(ms => setTimeout(postHeight, ms));
   if (typeof ResizeObserver !== "undefined") {
     new ResizeObserver(postHeight).observe(document.body);
   } else {
-    setInterval(postHeight, 500);
+    setInterval(postHeight, 750);
   }
 })();
 
