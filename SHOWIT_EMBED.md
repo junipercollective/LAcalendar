@@ -1,51 +1,41 @@
-# Embedding the calendar in Showit (mobile scroll fix)
+# Embedding the LA calendar in Showit (mobile scroll fix)
 
-The calendar is an iframe. Showit places it inside a fixed-size **Embed Code** box.
-On mobile that box is short, so it clips after ~2 events and won't scroll (iOS Safari
-forces an iframe to its full content height and ignores CSS height, so a fixed box
-with no scrolling just hides everything below the fold).
+The calendar is an iframe inside a fixed-size Showit **Embed Code** box. The box only
+grows tall enough to show all events if Showit's embed listens for the height message
+the calendar broadcasts. The calendar (`index.html`) broadcasts:
 
-The fix: the calendar already reports its real height to the page via `postMessage`.
-Paste the snippet below into your Showit Embed box so the iframe **grows to fit all
-events** — then the whole page scrolls normally on mobile, no inner scrollbar needed.
+    { type: "juniper-calendar-height", height: <px> }
+
+If the embed listens for a different type (e.g. the conferences embed's
+`juniper-conferences-height`) or points at a different `src`, the iframe never resizes
+and stays at its `min-height`. On desktop that's tall enough to look fine; on mobile
+(single column) it's only ~2 cards and the rest is clipped with no scroll.
 
 ## Paste this into the Showit Embed box
 
-Keep whatever `src` URL you are already using (shown here is the GitHub Pages URL —
-update it if yours differs):
+Use the calendar's own published URL for `src` (the GitHub Pages URL for the
+`LAcalendar` repo is shown below — update if yours differs):
 
 ```html
-<iframe id="juniper-cal"
-  src="https://junipercollective.github.io/LAcalendar/"
-  style="width:100%;border:0;display:block;"
-  scrolling="no"
-  title="LA Social Impact Events"></iframe>
+<iframe id="juniper-calendar" src="https://junipercollective.github.io/LAcalendar/" style="width:100%; border:none; min-height:1200px;" title="LA Social Impact Events" loading="lazy">
+</iframe>
 <script>
   window.addEventListener("message", function (e) {
-    if (e.data && e.data.type === "juniper-calendar-height" && e.data.height) {
-      var f = document.getElementById("juniper-cal");
-      if (f) f.style.height = e.data.height + "px";
+    if (e.data && e.data.type === "juniper-calendar-height") {
+      document.getElementById("juniper-calendar").style.height = e.data.height + "px";
     }
   });
 </script>
 ```
 
+## Why the id and type are calendar-specific
+The conferences embed uses id `juniper-conferences` and type `juniper-conferences-height`.
+Keep the calendar on its own id (`juniper-calendar`) and type (`juniper-calendar-height`)
+so that if both embeds ever live on the same page, each listener only resizes its own
+iframe. The calendar's `index.html` already sends `juniper-calendar-height`, so the
+listener above matches it.
+
 ## Showit settings to check
-- Set the Embed box to **full width**, and make sure it is allowed to grow (not set to
-  hide overflow). The script sets the iframe height; the box needs to reveal it.
-- On the **mobile breakpoint**, give the Embed box a generous height so it doesn't
-  constrain the iframe before the resize kicks in.
-
-## Fallback (only if the box truly cannot grow)
-Wrap the iframe in a fixed-height scroll window instead. This gives an internal scroll
-within a fixed area (slightly worse UX, but works with no resize handshake):
-
-```html
-<div style="height:80vh;overflow:auto;-webkit-overflow-scrolling:touch;">
-  <iframe
-    src="https://junipercollective.github.io/LAcalendar/"
-    style="width:100%;border:0;display:block;"
-    scrolling="yes"
-    title="LA Social Impact Events"></iframe>
-</div>
-```
+- Set the Embed box to **full width** and make sure it isn't set to hide overflow.
+- On the **mobile breakpoint**, don't lock the box to a short height — the script sets
+  the iframe height; the box needs to be able to show it.
