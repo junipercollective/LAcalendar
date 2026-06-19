@@ -65,6 +65,7 @@
 
   /* Clear */
   .clear-btn { font-size: 11px; font-weight: 500; color: var(--text-light); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 4px 8px; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
+  #clear-all { flex: 1 1 100%; text-align: center; margin-top: 6px; }
   .clear-btn:hover { color: var(--green-dark); }
 
   /* Panels (in sticky group, below triggers) */
@@ -74,7 +75,7 @@
     display: none;
   }
   .filter-panel.open { display: block; }
-  .panel-options { display: flex; flex-wrap: wrap; gap: 6px; }
+  .panel-options { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
   .option {
     padding: 6px 12px; border-radius: 16px;
     border: 1px solid var(--cream-dark); background: var(--white);
@@ -89,11 +90,11 @@
   /* Year / Month panel */
   .ym-block { margin-bottom: 14px; }
   .ym-block:last-child { margin-bottom: 0; }
-  .ym-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px; }
-  .ym-hint { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--text-light); }
+  .ym-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px; text-align: center; }
+  .ym-hint { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--text-light); text-align: center; }
 
   /* Date range panel */
-  .date-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+  .date-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; justify-content: center; }
   .date-field { display: flex; flex-direction: column; gap: 4px; }
   .date-field label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-light); }
   .date-field input { padding: 7px 10px; border: 1px solid var(--cream-dark); border-radius: 4px; font-family: 'Montserrat', sans-serif; font-size: 12px; background: var(--white); color: var(--text-dark); }
