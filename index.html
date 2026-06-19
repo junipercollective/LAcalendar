@@ -774,20 +774,33 @@ document.getElementById("clear-all").addEventListener("click", () => {
   render();
 });
 
-// Pass height to parent (for Showit iframe embed)
+// Pass height to parent (for Showit iframe embed).
+// The page lives in a fixed-size Showit embed box; on mobile that box clips
+// after ~2 cards (iOS Safari also forces an iframe to its content height and
+// ignores CSS height). We report the true content height to the parent so the
+// matching Showit listener can grow the iframe and the page scrolls naturally.
 (function() {
+  let lastHeight = 0;
+  function measure() {
+    const b = document.body, d = document.documentElement;
+    return Math.max(b.scrollHeight, b.offsetHeight, d.scrollHeight, d.offsetHeight);
+  }
   function postHeight() {
-    const height = document.documentElement.scrollHeight;
+    const height = measure();
+    if (height === lastHeight) return; // don't spam identical values / loop resizes
+    lastHeight = height;
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ type: "juniper-calendar-height", height: height }, "*");
     }
   }
-  window.addEventListener("load", postHeight);
-  window.addEventListener("resize", postHeight);
+  // Initial + on resize/rotate, plus delayed sends to catch async fonts/images
+  // and the CSV fetch that renders the cards after first paint.
+  ["load", "resize", "orientationchange"].forEach(ev => window.addEventListener(ev, postHeight));
+  [100, 400, 800, 1500, 3000].forEach(ms => setTimeout(postHeight, ms));
   if (typeof ResizeObserver !== "undefined") {
     new ResizeObserver(postHeight).observe(document.body);
   } else {
-    setInterval(postHeight, 500);
+    setInterval(postHeight, 750);
   }
 })();
 
