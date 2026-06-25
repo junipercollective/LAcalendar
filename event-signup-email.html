@@ -1,62 +1,64 @@
-<div id="jc-events-signup-wrap">
-  <form id="jc-events-signup">
+<div id="jc-signup-wrap">
+  <form id="jc-signup">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:840px;margin:0 auto;border-collapse:collapse;">
       <tbody><tr>
-        <td class="jc-events-cell jc-events-cell-name">
-          <input type="text" name="first_name" placeholder="FIRST NAME" class="jc-events-field">
+        <td class="jc-cell jc-cell-name">
+          <input type="text" name="first_name" placeholder="FIRST NAME" class="jc-field">
         </td>
-        <td class="jc-events-cell jc-events-cell-email jc-events-cell-gap">
-          <input type="email" name="email" placeholder="EMAIL ADDRESS" class="jc-events-field" required="">
+        <td class="jc-cell jc-cell-email jc-cell-gap">
+          <input type="email" name="email" placeholder="EMAIL ADDRESS" class="jc-field" required="">
         </td>
-        <td class="jc-events-cell jc-events-cell-go jc-events-cell-gap">
-          <button type="submit" class="jc-events-go">GO</button>
+        <td class="jc-cell jc-cell-go jc-cell-gap">
+          <button type="submit" class="jc-go">GO</button>
         </td>
       </tr>
     </tbody></table>
   </form>
-  <p id="jc-events-msg"></p>
+  <p id="jc-msg"></p>
 </div>
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&display=swap');
+
   /* Give each field the room it needs instead of three equal columns.
      The GO button no longer eats a third of the row, so the name and
      email fields stop looking squished. */
-  #jc-events-signup .jc-events-cell { vertical-align:top; }
-  #jc-events-signup .jc-events-cell-name  { width:34%; }
-  #jc-events-signup .jc-events-cell-email { width:46%; }
-  #jc-events-signup .jc-events-cell-go    { width:20%; }
-  #jc-events-signup .jc-events-cell-gap { padding-left:18px; }
-  #jc-events-signup .jc-events-field,
-  #jc-events-signup .jc-events-go {
+  #jc-signup .jc-cell { vertical-align:top; }
+  #jc-signup .jc-cell-name  { width:34%; }
+  #jc-signup .jc-cell-email { width:46%; }
+  #jc-signup .jc-cell-go    { width:20%; }
+  #jc-signup .jc-cell-gap { padding-left:18px; }
+  #jc-signup .jc-field,
+  #jc-signup .jc-go {
     width:100%; box-sizing:border-box; padding:22px 16px; text-align:center;
     font-family:'Cormorant Garamond','Georgia',serif;
     font-size:12px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase;
     border:1.5px solid #30523a;
   }
-  #jc-events-signup .jc-events-field { background:#fdfbf4; color:#30523a; }
-  #jc-events-signup ::placeholder { color:#30523a; opacity:0.85; }
-  #jc-events-signup .jc-events-go { background:#c1a55f; color:#ffffff; cursor:pointer; }
-  #jc-events-signup-wrap #jc-events-msg {
+  #jc-signup .jc-field { background:#fdfbf4; color:#30523a; }
+  #jc-signup ::placeholder { color:#30523a; opacity:0.85; }
+  #jc-signup .jc-go { background:#c1a55f; color:#ffffff; cursor:pointer; }
+  #jc-signup-wrap #jc-msg {
     max-width:840px; margin:10px auto 0; text-align:center;
-    font-family:'Cormorant Garamond','Georgia',serif; font-size:15px;
-    font-style:italic; color:#ffffff;
+    font-family:'Cormorant Garamond','Georgia',serif; font-size:15px; color:#30523a;
   }
   /* Mobile: stack the three cells vertically. */
   @media (max-width:600px) {
-    #jc-events-signup table,
-    #jc-events-signup tbody,
-    #jc-events-signup tr,
-    #jc-events-signup .jc-events-cell { display:block; width:100%; }
-    #jc-events-signup .jc-events-cell-gap { padding-left:0; padding-top:12px; }
+    #jc-signup table,
+    #jc-signup tbody,
+    #jc-signup tr,
+    #jc-signup .jc-cell { display:block; width:100%; }
+    #jc-signup .jc-cell-gap { padding-left:0; padding-top:12px; }
   }
 </style>
+
 <script>
-  document.getElementById('jc-events-signup').addEventListener('submit', async function(e){
+  document.getElementById('jc-signup').addEventListener('submit', async function(e){
     e.preventDefault();
-    var msg = document.getElementById('jc-events-msg');
+    var msg = document.getElementById('jc-msg');
     msg.textContent = 'Adding you...';
     try {
-      var r = await fetch('https://juniper-agent-production.up.railway.app/subscribe-events', {
+      var r = await fetch('https://juniper-agent-production.up.railway.app/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,7 +67,7 @@
         })
       });
       var d = await r.json();
-      msg.textContent = d.ok ? "You're in. Watch for the next events digest." : d.error;
+      msg.textContent = d.ok ? "You're in. Watch for the next digest." : d.error;
       if (d.ok) e.target.reset();
     } catch (err) {
       msg.textContent = 'Something went wrong. Try again.';
