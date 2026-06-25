@@ -63,6 +63,17 @@
   .filter-caret { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
   .filter-trigger.open .filter-caret { transform: rotate(180deg); }
 
+  /* Filters collapse toggle (mobile/embed only — hidden on desktop) */
+  .filters-toggle {
+    display: none; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 20px;
+    border: 1px solid var(--green-dark); background: var(--white);
+    font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; color: var(--green-dark);
+    cursor: pointer; white-space: nowrap;
+  }
+  .filters-toggle .filter-caret { transition: transform 0.2s; }
+  .filters-toggle.open .filter-caret { transform: rotate(180deg); }
+
   /* Clear */
   .clear-btn { font-size: 11px; font-weight: 500; color: var(--text-light); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 4px 8px; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
   #clear-all { flex: 1 1 100%; text-align: center; margin-top: 6px; }
@@ -185,6 +196,35 @@
   .cat-volunteering         { background: var(--green-sage); }
   .cat-default              { background: var(--green-sage); }
 
+  /* ── Draggable scroll handle (embed/touch only, scoped to the events list) ── */
+  .grab-rail { display: none; position: fixed; top: 0; right: 0; width: 18px; height: 100%; z-index: 200; pointer-events: none; }
+  .grab-rail::before { content: ""; position: absolute; top: 10px; bottom: 48px; right: 7px; width: 3px; border-radius: 2px; background: rgba(48,82,58,0.12); }
+  .grab-thumb {
+    position: absolute; right: 3px; top: 14px; width: 11px; height: 74px; border-radius: 7px; background: var(--green-sage);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.3); cursor: grab; touch-action: none; pointer-events: auto;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  }
+  .grab-thumb span { width: 3px; height: 3px; border-radius: 50%; background: rgba(255,255,255,0.85); }
+  .grab-thumb:active { cursor: grabbing; }
+
+  /* Soft fade at the bottom edge so a partial card blends out instead of cutting hard */
+  body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 40px;
+    background: linear-gradient(to bottom, rgba(252,250,243,0), var(--page-bg)); pointer-events: none; z-index: 60; }
+
+  /* ── Compact / embed mode: collapse filters behind a "Filters" button ── */
+  @media (max-width: 900px) {
+    .filters-toggle { display: inline-flex; }
+    .filter-triggers .filter-trigger { display: none; }                     /* hide the pills */
+    .filter-triggers.show-filters .filter-trigger { display: inline-flex; } /* show when expanded */
+
+    /* "Clear all" lives inside .filter-triggers — tuck it away with the pills,
+       so the collapsed bar is just search + Filters. It reappears when expanded. */
+    .filter-triggers #clear-all { display: none; }
+    .filter-triggers.show-filters #clear-all { display: block; }
+
+    .grab-rail.scrollable { display: block; } /* show on embed widths, only when scrollable */
+  }
+
   @media (max-width: 600px) {
     .header { padding: 28px 20px 22px; }
     .controls-inner { padding: 14px 20px; }
@@ -213,6 +253,7 @@
     </div>
 
     <div class="filter-triggers">
+      <button class="filters-toggle" id="filters-toggle" type="button">Filters <span class="filter-caret">&#9662;</span></button>
       <button class="filter-trigger" data-filter="date">
         Dates <span class="filter-count">0</span><span class="filter-caret">&#9662;</span>
       </button>
@@ -973,6 +1014,70 @@ document.getElementById("clear-all").addEventListener("click", () => {
 })();
 
 loadEvents();
+</script>
+
+<!-- Draggable scroll handle (touch-friendly, scoped to the events list) -->
+<div class="grab-rail" aria-hidden="true"><div class="grab-thumb" id="grab-thumb"><span></span><span></span><span></span></div></div>
+
+<script>
+// ── Collapse the filters (and "Clear all") behind a "Filters" button ──────────
+(function(){
+  var btn = document.getElementById('filters-toggle');
+  var row = document.querySelector('.filter-triggers');
+  if (!btn || !row) return;
+  btn.addEventListener('click', function(){
+    var open = !row.classList.contains('show-filters');
+    row.classList.toggle('show-filters', open); // shows/hides the pills + Clear all
+    btn.classList.toggle('open', open);          // rotates the caret
+  });
+})();
+
+// ── Draggable scroll handle ───────────────────────────────────────────────────
+(function(){
+  var rail = document.querySelector('.grab-rail'), thumb = document.getElementById('grab-thumb');
+  if (!rail || !thumb) return;
+  var PAD = 12;
+  var controls = document.querySelector('.controls'); // the sticky filter/header bar
+  var grid = document.getElementById('grid');         // the scrolling list container
+  var maxScroll = function(){ return document.documentElement.scrollHeight - window.innerHeight; };
+  var ctrlBottom = function(){ return controls ? Math.max(0, controls.getBoundingClientRect().bottom) : 0; };
+  // Scroll position at which the first event sits just under the sticky bar:
+  var minScroll = function(){
+    if (!grid) return 0;
+    var top = window.scrollY + grid.getBoundingClientRect().top - (controls ? controls.offsetHeight : 0);
+    return Math.max(0, Math.min(top, maxScroll()));
+  };
+  var travel = function(){ return rail.clientHeight - thumb.offsetHeight - PAD * 2; };
+  function refresh(){
+    var cb = ctrlBottom();
+    rail.style.top = cb + 'px';                          // keep the rail below the sticky bar
+    rail.style.height = (window.innerHeight - cb) + 'px';
+    var mn = minScroll(), mx = maxScroll(), range = mx - mn;
+    rail.classList.toggle('scrollable', range > 40);     // hide if there's nothing to scroll
+    if (range <= 40) return;
+    var frac = Math.max(0, Math.min(1, (window.scrollY - mn) / range));
+    thumb.style.top = (PAD + frac * travel()) + 'px';
+  }
+  var dragging = false, startY = 0, startScroll = 0;
+  thumb.addEventListener('pointerdown', function(e){
+    dragging = true; startY = e.clientY;
+    startScroll = Math.max(minScroll(), Math.min(maxScroll(), window.scrollY));
+    thumb.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  thumb.addEventListener('pointermove', function(e){
+    if (!dragging) return;
+    var mn = minScroll(), mx = maxScroll();
+    var target = startScroll + ((e.clientY - startY) / travel()) * (mx - mn);
+    window.scrollTo(0, Math.max(mn, Math.min(mx, target)));
+  });
+  var end = function(){ dragging = false; };
+  thumb.addEventListener('pointerup', end); thumb.addEventListener('pointercancel', end);
+  window.addEventListener('scroll', refresh, { passive: true });
+  window.addEventListener('resize', refresh);
+  // Recompute after the list re-renders (its height changes with filters):
+  if (grid && window.MutationObserver) { new MutationObserver(refresh).observe(grid, { childList: true }); }
+  setTimeout(refresh, 400);
+})();
 </script>
 </body>
 </html>
