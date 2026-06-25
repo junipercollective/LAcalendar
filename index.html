@@ -223,6 +223,12 @@
     .filter-triggers.show-filters #clear-all { display: block; }
 
     .grab-rail.scrollable { display: block; } /* show on embed widths, only when scrollable */
+
+    /* Long option lists (City, Region, Topic) can overflow past the bottom of
+       the screen. Because .controls is sticky-pinned to the top, the page can't
+       scroll to reveal the cut-off chips. Cap the open panel and let it scroll
+       inside itself so every option stays reachable. */
+    .filter-panel.open { max-height: 320px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   }
 
   @media (max-width: 600px) {
