@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#100f0c">
+<title>Workout — Juniper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Montserrat:wght@400;500;600;700&family=Oranienbaum&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { background: #100f0c; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif; }
+  input, textarea, button { font-family: inherit; }
+  /* hide number spinners */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  #root { min-height: 100%; }
+</style>
+<!-- React is vendored locally (see vendor/) so the app loads fast and works offline
+     at the gym. The app code lives in workout.app.js, compiled from workout.src.jsx
+     by build.js. Edit the .jsx source, then run: node build.js -->
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script src="workout.app.js"></script>
+</body>
+</html>
